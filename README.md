@@ -1,6 +1,9 @@
 # hoverboard firmware hack FOC MASTER/SLAVE
 
-This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. Compared to the commutation method, this new FOC control method offers superior performance featuring:
+This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. The boards communicate with each other via UART2, The motors are controlled via UART1 and Arduino. The left bldc motor was cut from the original program. 
+
+
+Compared to the commutation method, this new FOC control method offers superior performance featuring:
  - reduced noise and vibrations 	
  - smooth torque output and improved motor efficiency. Thus, lower energy consumption
  - field weakening to increase maximum speed range
