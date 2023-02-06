@@ -1,20 +1,12 @@
 # hoverboard firmware hack FOC MASTER/SLAVE
 
-This repository implements Field Oriented Control (FOC) for hoverboards witch two boards. Compared to the commutation method, this new FOC control method offers superior performance featuring:
+This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. Compared to the commutation method, this new FOC control method offers superior performance featuring:
  - reduced noise and vibrations 	
  - smooth torque output and improved motor efficiency. Thus, lower energy consumption
  - field weakening to increase maximum speed range
 
 ## Hardware
- 
-![mainboard_pinout](/docs/pictures/mainboard_pinout.png)
-
-The original Hardware supports two 4-pin cables that originally were connected to the two sideboards. They break out GND, 12/15V and USART2&3 of the Hoverboard mainboard. Both USART2&3 support UART, PWM, PPM, and iBUS input. Additionally, the USART2 can be used as 12bit ADC, while USART3 can be used for I2C. Note that while USART3 (right sideboard cable) is 5V tolerant, USART2 (left sideboard cable) is **not** 5V tolerant.
-
-Typically, the mainboard brain is an [STM32F103RCT6](/docs/literature/[10]_STM32F103xC_datasheet.pdf), however some mainboards feature a [GD32F103RCT6](/docs/literature/[11]_GD32F103xx-Datasheet-Rev-2.7.pdf) which is also supported by this firmware.
-
-For the reverse-engineered schematics of the mainboard, see [20150722_hoverboard_sch.pdf](/docs/20150722_hoverboard_sch.pdf)
-
+The program is used to support the [STM32F103CBT6] processor
  
 ---
 ## FOC Firmware
@@ -36,8 +28,7 @@ To explore the controller without a Matlab/Simulink installation click on the li
 ---
 ## Example Variants
 
-
-- **VARIANT_USART**: The motors are controlled via serial protocol (e.g. on USART3 right sensor cable, the short wired cable). The commands can be sent from an Arduino. Check out the [hoverserial.ino](/Arduino/hoverserial) as an example sketch.
+- **VARIANT_USART**: The motors are controlled via serial protocol (e.g. on USART1). The commands can be sent from an Arduino. Check out the [hoverserial.ino](/Arduino/hoverserial) as an example sketch.
 
 Of course the firmware can be further customized for other needs or projects.
 
@@ -64,11 +55,6 @@ Of course the firmware can be further customized for other needs or projects.
 <a/>
 
 - **Telegram Community:** If you are an enthusiast join our [Hooover Telegram Group](https://t.me/joinchat/BHWO_RKu2LT5ZxEkvUB8uw)
-
----
-## Stargazers
-
-[![Stargazers over time](https://starchart.cc/EFeru/hoverboard-firmware-hack-FOC.svg)](https://starchart.cc/EFeru/hoverboard-firmware-hack-FOC)
 
 ---
 ## Contributions
