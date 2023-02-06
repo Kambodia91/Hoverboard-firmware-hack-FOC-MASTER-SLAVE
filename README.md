@@ -63,9 +63,4 @@ Of course the firmware can be further customized for other needs or projects.
 ## Contributions
 
 Every contribution to this repository is highly appreciated! Feel free to create pull requests to improve this firmware as ultimately you are going to help everyone. 
-
-If you want to donate to keep this firmware updated, please use the link below:
-
-[![paypal](https://www.paypalobjects.com/en_US/NL/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=CU2SWN2XV9SCY&currency_code=EUR&source=url)
-
 ---
