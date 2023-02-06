@@ -2,7 +2,7 @@
 
 This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. The boards communicate with each other via UART2, The motors are controlled via UART1 on the master board and Arduino. The left bldc motor was cut from the original program. 
 
-The software is being tested.!
+The software is being tested.! More info soon.
 
 
 Compared to the commutation method, this new FOC control method offers superior performance featuring:
