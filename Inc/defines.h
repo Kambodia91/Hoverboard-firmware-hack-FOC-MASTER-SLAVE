@@ -80,7 +80,7 @@
 #define RIGHT_U_CUR_PORT    GPIOA
 #define RIGHT_V_CUR_PIN     GPIO_PIN_1                        // Phase C Current 
 #define RIGHT_V_CUR_PORT    GPIOA
-#define RIGHT_TEMP_PIN      GPIO_PIN_9                        // Temperature wheel
+#define RIGHT_TEMP_PIN      GPIO_PIN_1                        // Temperature wheel
 #define RIGHT_TEMP_PORT     GPIOB
 #define DCLINK_PIN          GPIO_PIN_4                        // V Bat
 #define DCLINK_PORT         GPIOA
@@ -107,12 +107,12 @@
 #endif
 
 #ifdef BOARD_MASTER
-#define BUZZER_PIN GPIO_PIN_9                                // Buzzer 
-#define BUZZER_PORT GPIOB
+#define BUZZER_PIN          GPIO_PIN_14                               // Buzzer 
+#define BUZZER_PORT         GPIOC
 #endif
 
-#define OFF_PIN GPIO_PIN_2                                    // Mosfet Latch
-#define OFF_PORT GPIOB                                        // BOARD_SLAVE pin no connect
+#define OFF_PIN             GPIO_PIN_2                                    // Mosfet Latch
+#define OFF_PORT            GPIOB                                        // BOARD_SLAVE pin no connect
 
 #define CHARGER_PIN         GPIO_PIN_15                       // Charger
 #define CHARGER_PORT        GPIOC

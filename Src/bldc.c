@@ -100,12 +100,12 @@ void DMA1_Channel1_IRQHandler(void) {
     offsetdcr = (adc_buffer.dcr + offsetdcr) / 2;
     return;
   }
-
+#ifdef BOARD_MASTER
   if (buzzerTimer % 1000 == 0) {  // Filter battery voltage at a slower sampling rate
     filtLowPass32(adc_buffer.batt1, BAT_FILT_COEF, &batVoltageFixdt);
     batVoltage = (int16_t)(batVoltageFixdt >> 16);  // convert fixed-point to integer
   }
-
+#endif
   // Get Left motor currents
   curL_phaA = 0;//(int16_t)(offsetrlA - adc_buffer.rlA); // Unnecessary
   curL_phaB = 0;//(int16_t)(offsetrlB - adc_buffer.rlB); // Unnecessary
