@@ -1,5 +1,5 @@
 # Hoverboard firmware hack FOC MASTER/SLAVE (HOVER-1 RIVAL)
-(/docs/pictures/HOVERBOARD-HOVER-RIVAL-LED.jpg)
+![HOVER-1](/docs/pictures/HOVERBOARD-HOVER-RIVAL-LED.jpg)
 
 This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. The boards communicate with each other via UART2, The motors are controlled via UART1 on the master board and Arduino. The left bldc motor was cut from the original program. 
 
@@ -12,7 +12,11 @@ Compared to the commutation method, this new FOC control method offers superior 
  - field weakening to increase maximum speed range
 
 ## Hardware
-The program is used to support the [STM32F103CBT6](https://github.com/Kambodia91/Hoverboard-firmware-hack-FOC-MASTER-SLAVE/blob/main/docs/literature/STM32F103xB.pdf) processor
+The originals are MM32 processors. We need to replace them with STM32. The program is used to support the [STM32F103CBT6](https://github.com/Kambodia91/Hoverboard-firmware-hack-FOC-MASTER-SLAVE/blob/main/docs/literature/STM32F103xB.pdf) processor. 
+More information can be found in the [docs](/docs/).
+
+Board pinouts: Slave / Master
+![mainboard_pinout](/docs/Board%20MASTER-SLAVE.png)
  
 ---
 ## FOC Firmware
@@ -34,7 +38,7 @@ To explore the controller without a Matlab/Simulink installation click on the li
 ---
 ## Example Variants
 
-- **VARIANT_USART**: The motors are controlled via serial protocol (e.g. on USART1). The commands can be sent from an Arduino. Check out the [hoverserial.ino](/Arduino/hoverserial) as an example sketch.
+- **VARIANT_USART**: The motors are controlled via serial protocol (e.g. on USART1). The commands can be sent from an Arduino. Check out the [hoverserial](/Arduino/hoverserial.cpp) as an example sketch.
 
 Of course the firmware can be further customized for other needs or projects.
 
