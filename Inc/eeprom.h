@@ -185,8 +185,8 @@
 #define PAGE0_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + (PAGE_SIZE - 1)))
 #define PAGE0_ID               ADDR_FLASH_PAGE_64
 
-#define PAGE1_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0xEEEE))
-#define PAGE1_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + 0xEEEE + PAGE_SIZE - 1))
+#define PAGE1_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0xFFEE))
+#define PAGE1_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + 0xFFEE + PAGE_SIZE - 1))
 #define PAGE1_ID               ADDR_FLASH_PAGE_96
 
 /* Used Flash pages for EEPROM emulation */

@@ -107,7 +107,7 @@
 #endif
 
 #ifdef BOARD_MASTER
-#define BUZZER_PIN          GPIO_PIN_14                               // Buzzer 
+#define BUZZER_PIN          GPIO_PIN_14                              // Buzzer 
 #define BUZZER_PORT         GPIOC
 #endif
 
