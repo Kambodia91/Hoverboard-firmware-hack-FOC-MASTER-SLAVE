@@ -592,7 +592,7 @@ int main(void) {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Powering off, battery voltage is too low\r\n");
       #endif
-      //poweroff();
+      poweroff();
     } else if (rtY_Left.z_errCode || rtY_Right.z_errCode) {                                           // 1 beep (low pitch): Motor error, disable motors
       enable = 0;
       beepCount(1, 24, 1);
