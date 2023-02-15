@@ -77,8 +77,8 @@
 #define BAT_CALIB_ADC           1495      // adc-value measured by mainboard (value nr 5 on UART debug output)
 #define BAT_CELLS               10        // battery number of cells. Normal Hoverboard battery: 10s
 #define BAT_LVL2_ENABLE         0         // to beep or not to beep, 1 or 0
-#define BAT_LVL1_ENABLE         1         // to beep or not to beep, 1 or 0
-#define BAT_DEAD_ENABLE         1         // to poweroff or not to poweroff, 1 or 0
+#define BAT_LVL1_ENABLE         0         // to beep or not to beep, 1 or 0
+#define BAT_DEAD_ENABLE         0         // to poweroff or not to poweroff, 1 or 0
 #define BAT_BLINK_INTERVAL      80        // battery led blink interval (80 loops * 5ms ~= 400ms)
 #define BAT_LVL5                (390 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE    // Green blink:  no beep
 #define BAT_LVL4                (380 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE    // Yellow:       no beep
