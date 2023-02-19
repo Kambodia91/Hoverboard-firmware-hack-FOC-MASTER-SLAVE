@@ -1,0 +1,6 @@
+obwod kola 84.78cm
+średnica kola 27cm
+ilość obrotow na 1 km 1179 razy
+
+20 RMP/min aby jechac 1 km/h
+80 RPM/min aby jechac 4 km/h
