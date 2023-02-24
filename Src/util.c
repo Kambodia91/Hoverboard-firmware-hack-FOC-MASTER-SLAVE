@@ -109,8 +109,9 @@ uint8_t  timeoutFlgADC    = 0;          // Timeout Flag for ADC Protection:    0
 uint8_t  timeoutFlgSerial = 0;          // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 
 int16_t batVoltageCalib;                // V-bat from Master.
-int16_t speedL_meas_From_Slave;         // SpeedL_meas from Slave.
+int16_t speedSlave_meas;         // SpeedL_meas from Slave.
 int16_t empty_meas_From_Slave;          // Empty.
+int16_t enableMotors;                   // Command enable motors from uart1
 
 uint8_t  ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t  ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
@@ -177,8 +178,8 @@ static uint32_t Sideboard_R_len = sizeof(Sideboard_R);
 #endif
 
 #if defined(CONTROL_SERIAL_USART2)
-static SerialCommand commandL;
-static SerialCommand commandL_raw;
+static SerialUart2 commandL;
+static SerialUart2 commandL_raw;
 static uint32_t commandL_len = sizeof(commandL);
   #ifdef CONTROL_IBUS
   static uint16_t ibusL_captured_value[IBUS_NUM_CHANNELS];
@@ -186,8 +187,8 @@ static uint32_t commandL_len = sizeof(commandL);
 #endif
 
 #if defined(CONTROL_SERIAL_USART1)
-static SerialCommand commandR;
-static SerialCommand commandR_raw;
+static SerialUart1 commandR;
+static SerialUart1 commandR_raw;
 static uint32_t commandR_len = sizeof(commandR);
   #ifdef CONTROL_IBUS
   static uint16_t ibusR_captured_value[IBUS_NUM_CHANNELS];
@@ -870,13 +871,15 @@ void readInputRaw(void) {
         input1[inIdx].raw = (ibusL_captured_value[0] - 500) * 2;
         input2[inIdx].raw = (ibusL_captured_value[1] - 500) * 2; 
       #else
-        #ifdef BOARD_SLAVE
-        input1[inIdx].raw = commandL.steer;
-        batVoltageCalib = commandL.speed;
+        // Message Master => Slave
+        #ifdef BOARD_SLAVE                                    // RX UART2
+        enableMotors      =  commandL.enableMotors;           // BOARD MASTER => Message enableMotors     => BOARD SLAVE.
+        input1[inIdx].raw = -commandL.speedSlave;             // BOARD MASTER => Message speedSlave       => BOARD SLAVE.
+        batVoltageCalib   =  commandL.bateryVoltage;          // BOARD MASTER => Message bateryVoltage    => BOARD SLAVE.
         #endif
-        #ifdef BOARD_MASTER
-        empty_meas_From_Slave   = commandL.steer;
-        speedL_meas_From_Slave  = commandL.speed;
+        // Message Slave => Master
+        #ifdef BOARD_MASTER                                   // RX UART2
+        speedSlave_meas   = commandL.speedSlave_meas;         // BOARD SLAVE  => Message speedSlave_meae  => BOARD MASTER.
         #endif
       #endif
     }
@@ -889,9 +892,10 @@ void readInputRaw(void) {
         }
         input1[inIdx].raw = (ibusR_captured_value[0] - 500) * 2;
         input2[inIdx].raw = (ibusR_captured_value[1] - 500) * 2; 
-      #else
-        input1[inIdx].raw = commandR.steer;
-        input2[inIdx].raw = commandR.speed;
+      #else                                                   // RX UART2
+        enableMotors      = commandR.enableMotors;            // ARDUINO      => Message enableMotors     => BOARD MASTER.
+        input1[inIdx].raw = commandR.speedMaster;             // ARDUINO      => Message speedMaster      => BOARD MASTER.
+        input2[inIdx].raw = commandR.speedSlave;              // ARDUINO      => Message speedSlave       => BOARD MASTER.
       #endif
     }
     #endif
@@ -1047,6 +1051,7 @@ void handleTimeout(void) {
       ctrlModReq  = OPEN_MODE;                                          // Request OPEN_MODE. This will bring the motor power to 0 in a controlled way
       input1[inIdx].cmd  = 0;
       input2[inIdx].cmd  = 0;
+      enableMotors       = 0;
     } else {
       ctrlModReq  = ctrlModReqRaw;                                      // Follow the Mode request
     }
@@ -1114,13 +1119,13 @@ void usart2_rx_check(void)
   uint8_t ptr_debug[SERIAL_BUFFER_SIZE];
   if (pos != old_pos) {                                                 // Check change in received data
     if (pos > old_pos) {                                                // "Linear" buffer mode: check if current position is over previous one
-      usart_process_debug(&rx_buffer_L[old_pos], pos - old_pos);        // Process data
+      usart2_process_debug(&rx_buffer_L[old_pos], pos - old_pos);        // Process data
     } else {                                                            // "Overflow" buffer mode
       memcpy(&ptr_debug[0], &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         memcpy(&ptr_debug[rx_buffer_L_len - old_pos], &rx_buffer_L[0], pos);                              // Copy remaining data
       }
-      usart_process_debug(ptr_debug, rx_buffer_L_len - old_pos + pos);        // Process data
+      usart2_process_debug(ptr_debug, rx_buffer_L_len - old_pos + pos);        // Process data
     }
   }
   #endif // DEBUG_SERIAL_USART2
@@ -1131,14 +1136,14 @@ void usart2_rx_check(void)
     ptr = (uint8_t *)&commandL_raw;                                     // Initialize the pointer with command_raw address
     if (pos > old_pos && (pos - old_pos) == commandL_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], commandL_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_command(&commandL_raw, &commandL, 2);               // Process data
+      usart2_process_command(&commandL_raw, &commandL, 2);               // Process data
     } else if ((rx_buffer_L_len - old_pos + pos) == commandL_len) {     // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in command_raw
         memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
       }
-      usart_process_command(&commandL_raw, &commandL, 2);               // Process data
+      usart2_process_command(&commandL_raw, &commandL, 2);               // Process data
     }
   }
   #endif // CONTROL_SERIAL_USART2
@@ -1149,14 +1154,14 @@ void usart2_rx_check(void)
     ptr = (uint8_t *)&Sideboard_L_raw;                                  // Initialize the pointer with Sideboard_raw address
     if (pos > old_pos && (pos - old_pos) == Sideboard_L_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], Sideboard_L_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
+      usart2_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
     } else if ((rx_buffer_L_len - old_pos + pos) == Sideboard_L_len) {  // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in Sideboard_raw
         memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
       }
-      usart_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
+      usart2_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
     }
   }
   #endif // SIDEBOARD_SERIAL_USART2
@@ -1187,13 +1192,13 @@ void usart1_rx_check(void)
 
   if (pos != old_pos) {                                                 // Check change in received data
     if (pos > old_pos) {                                                // "Linear" buffer mode: check if current position is over previous one
-      usart_process_debug(&rx_buffer_R[old_pos], pos - old_pos);        // Process data
+      usart1_process_debug(&rx_buffer_R[old_pos], pos - old_pos);        // Process data
     } else {                                                            // "Overflow" buffer mode
       memcpy(&ptr_debug[0], &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         memcpy(&ptr_debug[rx_buffer_R_len - old_pos], &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart_process_debug(ptr_debug, rx_buffer_R_len - old_pos + pos);        // Process data
+      usart1_process_debug(ptr_debug, rx_buffer_R_len - old_pos + pos);        // Process data
     }
   }
   #endif // DEBUG_SERIAL_USART1
@@ -1204,14 +1209,14 @@ void usart1_rx_check(void)
     ptr = (uint8_t *)&commandR_raw;                                     // Initialize the pointer with command_raw address
     if (pos > old_pos && (pos - old_pos) == commandR_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], commandR_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_command(&commandR_raw, &commandR, 1);               // Process data
+      usart1_process_command(&commandR_raw, &commandR, 1);               // Process data
     } else if ((rx_buffer_R_len - old_pos + pos) == commandR_len) {     // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in command_raw
         memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart_process_command(&commandR_raw, &commandR, 1);               // Process data
+      usart1_process_command(&commandR_raw, &commandR, 1);               // Process data
     }
   }
   #endif // CONTROL_SERIAL_USART1
@@ -1222,14 +1227,14 @@ void usart1_rx_check(void)
     ptr = (uint8_t *)&Sideboard_R_raw;                                  // Initialize the pointer with Sideboard_raw address
     if (pos > old_pos && (pos - old_pos) == Sideboard_R_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], Sideboard_R_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
+      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
     } else if ((rx_buffer_R_len - old_pos + pos) == Sideboard_R_len) {  // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in Sideboard_raw
         memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
+      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
     }
   }
   #endif // SIDEBOARD_SERIAL_USART1
@@ -1259,8 +1264,8 @@ void usart_process_debug(uint8_t *userCommand, uint32_t len)
  * Process command Rx data
  * - if the command_in data is valid (correct START_FRAME and checksum) copy the command_in to command_out
  */
-#if defined(CONTROL_SERIAL_USART2) || defined(CONTROL_SERIAL_USART1)
-void usart_process_command(SerialCommand *command_in, SerialCommand *command_out, uint8_t usart_idx)
+#if defined(CONTROL_SERIAL_USART1)
+void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx)
 {
   #ifdef CONTROL_IBUS
     uint16_t ibus_chksum;
@@ -1287,22 +1292,66 @@ void usart_process_command(SerialCommand *command_in, SerialCommand *command_out
   #else
   uint16_t checksum;
   if (command_in->start == SERIAL_START_FRAME) {
-    checksum = (uint16_t)(command_in->start ^ command_in->steer ^ command_in->speed);
+    checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave);
+    
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
-      if (usart_idx == 2) {             // Sideboard USART2
-        #ifdef CONTROL_SERIAL_USART2
-        timeoutFlgSerial_L = 0;         // Clear timeout flag
-        timeoutCntSerial_L = 0;         // Reset timeout counter
-        #endif
-      } else if (usart_idx == 1) {      // Sideboard USART1
-        #ifdef CONTROL_SERIAL_USART1
+      if (usart_idx == 1) {      // Sideboard USART1
         timeoutFlgSerial_R = 0;         // Clear timeout flag
         timeoutCntSerial_R = 0;         // Reset timeout counter
-        #endif
       }
     }
   }
+  #endif
+}
+#endif
+
+#if defined(CONTROL_SERIAL_USART2)
+void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx)
+{
+  #ifdef CONTROL_IBUS
+    uint16_t ibus_chksum;
+    if (command_in->start == IBUS_LENGTH && command_in->type == IBUS_COMMAND) {
+      ibus_chksum = 0xFFFF - IBUS_LENGTH - IBUS_COMMAND;
+      for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i++) {
+        ibus_chksum -= command_in->channels[i];
+      }
+      if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
+        *command_out = *command_in;
+        if (usart_idx == 2) {             // Sideboard USART2
+          #ifdef CONTROL_SERIAL_USART2
+          timeoutFlgSerial_L = 0;         // Clear timeout flag
+          timeoutCntSerial_L = 0;         // Reset timeout counter
+          #endif
+        } else if (usart_idx == 3) {      // Sideboard USART1
+          #ifdef CONTROL_SERIAL_USART1
+          timeoutFlgSerial_R = 0;         // Clear timeout flag
+          timeoutCntSerial_R = 0;         // Reset timeout counter
+          #endif
+        }
+      }
+    }
+  #else
+  uint16_t checksum;
+  #ifdef BOARD_MASTER   // Master read message from SLAVE
+  if (command_in->start == SERIAL_START_FRAME) {
+    checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave ^ command_in->speedSlave_meas ^ command_in->bateryVoltage);
+  #endif  
+
+  #ifdef BOARD_SLAVE    //  Slave read message from MASTER
+  if (command_in->start == SERIAL_START_FRAME) {
+    checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave ^ command_in->speedSlave_meas ^ command_in->bateryVoltage);
+  #endif  
+    
+    if (command_in->checksum == checksum) {
+      *command_out = *command_in;
+      if (usart_idx == 2) {             // Sideboard USART2
+        timeoutFlgSerial_L = 0;         // Clear timeout flag
+        timeoutCntSerial_L = 0;         // Reset timeout counter
+      }
+    }
+  }
+  
   #endif
 }
 #endif

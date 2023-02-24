@@ -31,7 +31,7 @@
 #define TIME_SEND           20         // [ms] Sending time interval
 #define SPEED_MAX_TEST      100         // [-] Maximum speed for testing
 #define SPEED_STEP          1          // [-] Speed step
-//#define DEBUG_RX                        // [-] Debug received data. Prints all bytes to serial (comment-out to disable)
+// #define DEBUG_RX                        // [-] Debug received data. Prints all bytes to serial (comment-out to disable)
 #include <Arduino.h>
 // Global variables
 uint8_t idx = 0;                        // Index for new data pointer
@@ -42,8 +42,9 @@ byte incomingBytePrev;
 
 typedef struct{
    uint16_t start;
-   int16_t  steer;
-   int16_t  speed;
+   int16_t  enableMotors;
+   int16_t  speedMaster;
+   int16_t  speedSlave;
    uint16_t checksum;
 } SerialCommand;
 SerialCommand Command;
@@ -73,13 +74,14 @@ void setup()
 }
 
 // ########################## SEND ##########################
-void Send(int16_t uSteer, int16_t uSpeed)
+void Send(int16_t uEnableMotors, int16_t uSpeedMaster, int16_t uSpeedSlave)
 {
   // Create command
-  Command.start    = (uint16_t)START_FRAME;
-  Command.steer    = (int16_t)uSteer;
-  Command.speed    = (int16_t)uSpeed;
-  Command.checksum = (uint16_t)(Command.start ^ Command.steer ^ Command.speed);
+  Command.start           = (uint16_t)START_FRAME;    // Start Frame  
+  Command.enableMotors    = (int16_t)uEnableMotors;   // ARDUINO  => MASTER HOVER.
+  Command.speedMaster     = (int16_t)uSpeedMaster;    // ARDUINO  => MASTER HOVER.
+  Command.speedSlave      = (int16_t)uSpeedSlave;     // ARDUINO  => MASTER HOVER.
+  Command.checksum        = (uint16_t)(Command.start ^ Command.enableMotors ^ Command.speedMaster ^ Command.speedSlave);
 
   // Write to Serial
   Serial2.write((uint8_t *) &Command, sizeof(Command)); 
@@ -159,7 +161,7 @@ void loop(void)
   // Send commands
   if (iTimeSend > timeNow) return;
   iTimeSend = timeNow + TIME_SEND;
-  Send(iTest, iTest);
+  Send(1, iTest, iTest);
 
   // Calculate test command signal
   iTest += iStep;

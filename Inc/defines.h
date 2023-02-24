@@ -107,12 +107,12 @@
 #endif
 
 #ifdef BOARD_MASTER
-#define BUZZER_PIN          GPIO_PIN_9                              // Buzzer 
+#define BUZZER_PIN          GPIO_PIN_9                        // Buzzer 
 #define BUZZER_PORT         GPIOB
 #endif
 
-#define OFF_PIN             GPIO_PIN_2                                    // Mosfet Latch
-#define OFF_PORT            GPIOB                                        // BOARD_SLAVE pin no connect
+#define OFF_PIN             GPIO_PIN_2                        // Mosfet Latch
+#define OFF_PORT            GPIOB                             // BOARD_SLAVE pin no connect
 
 #define CHARGER_PIN         GPIO_PIN_15                       // Charger
 #define CHARGER_PORT        GPIOC

@@ -82,8 +82,9 @@ extern volatile int pwmr;               // global variable for pwm right. -1000 
 
 extern uint8_t enable;                  // global variable for motor enable
 
-extern int16_t speedL_meas_From_Slave; // global variable for motor speed
+extern int16_t speedSlave_meas;         // global variable for motor Slave speed
 extern int16_t empty_meas_From_Slave;
+extern int16_t enableMotors;            // Command from uart1
 
 extern int16_t batVoltage;              // global variable for battery voltage
 
@@ -119,7 +120,8 @@ int16_t cmdR;                    // global variable for Right Command
 //------------------------------------------------------------------------
 // Local variables
 //------------------------------------------------------------------------
-#if defined(FEEDBACK_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART1)
+#if defined(FEEDBACK_SERIAL_USART1)
+//Send to USART1//
 typedef struct{
   uint16_t  start;
   int16_t   cmd1;
@@ -132,26 +134,24 @@ typedef struct{
   uint16_t  checksum;
 } SerialFeedback;
 static SerialFeedback Feedback;
-//Send to Slave//
+#endif
+
+#if defined(FEEDBACK_SERIAL_USART2)
+//Send to USART2//
 typedef struct{
-  uint16_t  start;
-  int16_t   cmd1;
-  int16_t   batVoltage;
-  uint16_t  checksum;
-} SerialSendToSlave;
-static SerialSendToSlave SendToSlave;
-//Send to Master//
-typedef struct{
-  uint16_t  start;
-  int16_t   empty;
-  int16_t   speedL_meas;
-  uint16_t  checksum;
-} SerialSendToMaster;
-static SerialSendToMaster SendToMaster;
+  uint16_t  start;          // Master/Slave
+  int16_t   enableMotors;   // Master
+  int16_t   speedMaster;    // Master
+  int16_t   speedSlave;     // Master
+  int16_t   speedSlave_meas;// Slave
+  int16_t   bateryVoltage;  // Slave
+  uint16_t  checksum;       // Master/Slave
+} SerialSend_Usart2;
+static SerialSend_Usart2 Send_Usart2;
 
 #endif
 #if defined(FEEDBACK_SERIAL_USART2)
-static uint8_t sideboard_leds_L;
+//static uint8_t sideboard_leds_L;
 #endif
 #if defined(FEEDBACK_SERIAL_USART1)
 static uint8_t sideboard_leds_R;
@@ -234,6 +234,9 @@ int main(void) {
   HAL_ADC_Start(&hadc2);
 
   poweronMelody();
+//test delay//
+ // HAL_Delay(1000);
+
   HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
   
   int32_t board_temp_adcFixdt = adc_buffer.temp << 16;  // Fixed-point filter output initialized with current ADC converted to fixed-point
@@ -339,11 +342,11 @@ int main(void) {
 
       // ####### LOW-PASS FILTER #######
       rateLimiter16(input1[inIdx].cmd, rate, &steerRateFixdt);
-      rateLimiter16(input2[inIdx].cmd, rate, &speedRateFixdt);
+      //rateLimiter16(input2[inIdx].cmd, rate, &speedRateFixdt);
       filtLowPass32(steerRateFixdt >> 4, FILTER, &steerFixdt);
-      filtLowPass32(speedRateFixdt >> 4, FILTER, &speedFixdt);
+      //filtLowPass32(speedRateFixdt >> 4, FILTER, &speedFixdt);
       steer = (int16_t)(steerFixdt >> 16);  // convert fixed-point to integer
-      speed = (int16_t)(speedFixdt >> 16);  // convert fixed-point to integer
+      //speed = (int16_t)(speedFixdt >> 16);  // convert fixed-point to integer
 
       // ####### VARIANT_HOVERCAR #######
       #ifdef VARIANT_HOVERCAR
@@ -367,7 +370,7 @@ int main(void) {
       #if defined(TANK_STEERING) && !defined(VARIANT_HOVERCAR) && !defined(VARIANT_SKATEBOARD) 
         // Tank steering (no mixing)
         cmdL = steer; 
-        cmdR = speed;
+        cmdR = 0;
       #else 
         // ####### MIXER #######
         mixerFcn(speed << 4, steer << 4, &cmdR, &cmdL);   // This function implements the equations above
@@ -383,7 +386,11 @@ int main(void) {
       #ifdef INVERT_L_DIRECTION
         pwml = -cmdL;
       #else
+      if (enableMotors){
         pwmr = cmdL;
+      } else {
+        pwmr = 0U;
+      }
       #endif
     #endif
 
@@ -533,48 +540,49 @@ int main(void) {
     // ####### FEEDBACK SERIAL OUT #######
     #if defined(FEEDBACK_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART1)
       if (main_loop_counter % 2 == 0) {    // Send data periodically every 10 ms
-        Feedback.start	        = (uint16_t)SERIAL_START_FRAME;
-        Feedback.cmd1           = (int16_t)input1[inIdx].cmd;
-        Feedback.cmd2           = (int16_t)input2[inIdx].cmd;
-        Feedback.speedR_meas	  = (int16_t)rtY_Right.n_mot;
-        Feedback.speedL_meas	  = (int16_t)speedL_meas_From_Slave; // zmienna odebrana z uart2 od lewego koła
-        Feedback.batVoltage	    = (int16_t)batVoltageCalib;
-        Feedback.boardTemp	    = (int16_t)board_temp_deg_c;
         
-        //USART2 Send to SLAVE//
-        #ifdef BOARD_MASTER
-        SendToSlave.start	      = (uint16_t)SERIAL_START_FRAME;
-        SendToSlave.cmd1        = (int16_t)-input2[inIdx].cmd;   // PWM Slave   // send  input1 = Steer w SLAVE  // pwm motor
-        SendToSlave.batVoltage	= (int16_t)batVoltageCalib;     // send  input2 = Speed w SLAVE  // vbat Master
-        #endif
-        //USART2 Send to MASTER//
-        #ifdef BOARD_SLAVE
-        SendToMaster.start	      = (uint16_t)SERIAL_START_FRAME;
-        SendToMaster.empty        = (int16_t)0U;
-        SendToMaster.speedL_meas	= (int16_t)rtY_Right.n_mot;     // send  input2 = Speed w SLAVE  // vbat Master
+        #if defined(FEEDBACK_SERIAL_USART1)
+        //USART1 MASTER => ARDUINO//
+        Feedback.start	        = (uint16_t)SERIAL_START_FRAME;
+        Feedback.cmd1           = (int16_t)input1[inIdx].cmd;               // MASTER   => cmd1              => ARDUINO.
+        Feedback.cmd2           = (int16_t)input2[inIdx].cmd;               // MASTER   => cmd2              => ARDUINO.
+        Feedback.speedR_meas	  = (int16_t)rtY_Right.n_mot;                 // MASTER   => speedR_meas       => ARDUINO.
+        Feedback.speedL_meas	  = (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas   => MASTER   => speedL_meas       => ARDUINO.
+        Feedback.batVoltage	    = (int16_t)batVoltageCalib;                 // MASTER   => enableMotors      => ARDUINO.
+        Feedback.boardTemp	    = (int16_t)board_temp_deg_c;                // MASTER   => enableMotors      => ARDUINO.
+        
+        if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
+          Feedback.cmdLed     = (uint16_t)sideboard_leds_R;
+          Feedback.checksum   = (uint16_t)(Feedback.start ^ Feedback.cmd1 ^ Feedback.cmd2 ^ Feedback.speedR_meas ^ Feedback.speedL_meas ^ Feedback.batVoltage ^ Feedback.boardTemp ^ Feedback.cmdLed);
+          // TR USART1
+          HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&Feedback, sizeof(Feedback));
+        }
         #endif
         #if defined(FEEDBACK_SERIAL_USART2)
-          if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
-            #ifdef BOARD_MASTER
-            SendToSlave.checksum   = (uint16_t)(SendToSlave.start ^ SendToSlave.cmd1 ^ SendToSlave.batVoltage);
-
-            HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&SendToSlave, sizeof(SendToSlave));
-            #endif
-            #ifdef BOARD_SLAVE
-            SendToMaster.checksum   = (uint16_t)(SendToMaster.start ^ SendToMaster.empty ^ SendToMaster.speedL_meas);
-
-            HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&SendToMaster, sizeof(SendToMaster));
-            #endif
-          }
+        //USART2 MASTER => SLAVE//
+        #ifdef BOARD_MASTER
+        Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
+        Send_Usart2.enableMotors      = (int16_t)enableMotors;              // MASTER   => enableMotors      => SLAVE.
+        Send_Usart2.speedMaster       = (int16_t)0U;                        // MASTER   => speedMaster       => SLAVE.
+        Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
+        Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas   => SLAVE.
+        Send_Usart2.bateryVoltage	    = (int16_t)batVoltageCalib;           // MASTER   => bateryVoltage     => SLAVE.
         #endif
-        #if defined(FEEDBACK_SERIAL_USART1)
-          if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
-            Feedback.cmdLed     = (uint16_t)sideboard_leds_R;
-            Feedback.checksum   = (uint16_t)(Feedback.start ^ Feedback.cmd1 ^ Feedback.cmd2 ^ Feedback.speedR_meas ^ Feedback.speedL_meas 
-                                           ^ Feedback.batVoltage ^ Feedback.boardTemp ^ Feedback.cmdLed);
-
-            HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&Feedback, sizeof(Feedback));
-          }
+        //USART2 SLAVE => MASTER//
+        #ifdef BOARD_SLAVE
+        Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
+        Send_Usart2.enableMotors      = (int16_t)0U;                        // SLAVE    => enableMotors      => MASTER.
+        Send_Usart2.speedMaster       = (int16_t)0U;                        // SLAVE    => speedMaster       => MASTER.
+        Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
+        Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Right.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
+        Send_Usart2.bateryVoltage	    = (int16_t)0U;                        // SLAVE    => bateryVoltage     => MASTER.
+        #endif
+        
+        if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
+          Send_Usart2.checksum   = (uint16_t)(Send_Usart2.start ^ Send_Usart2.enableMotors ^ Send_Usart2.speedMaster ^ Send_Usart2.speedSlave ^ Send_Usart2.speedSlave_meas ^ Send_Usart2.bateryVoltage);
+          // TR USART2
+          HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&Send_Usart2, sizeof(Send_Usart2));
+        }
         #endif
       }
     #endif

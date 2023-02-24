@@ -25,7 +25,7 @@
 
 
 // Rx Structures USART
-#if defined(CONTROL_SERIAL_USART2) || defined(CONTROL_SERIAL_USART1)
+#if defined(CONTROL_SERIAL_USART1)
   #ifdef CONTROL_IBUS
     typedef struct{
       uint8_t  start;
@@ -35,14 +35,38 @@
       uint8_t  checksumh;
     } SerialCommand;
   #else
-    typedef struct{
-      uint16_t  start;
-      int16_t   steer;
-      int16_t   speed;
-      uint16_t  checksum;
-    } SerialCommand;
+    typedef struct{ // Master/Arduino
+      uint16_t  start;          // 
+      int16_t   enableMotors;   // Arduino  => Master
+      int16_t   speedMaster;    // Arduino  => Master
+      int16_t   speedSlave;     // Arduino  => Master         => Slave
+      uint16_t  checksum;       // 
+    } SerialUart1;
   #endif
 #endif
+
+#if defined(CONTROL_SERIAL_USART2)
+  #ifdef CONTROL_IBUS
+    typedef struct{
+      uint8_t  start;
+      uint8_t  type; 
+      uint8_t  channels[IBUS_NUM_CHANNELS*2];
+      uint8_t  checksuml;
+      uint8_t  checksumh;
+    } SerialCommand;
+  #else
+    typedef struct{ // Master/Slave
+      uint16_t  start;          // 
+      int16_t   enableMotors;   // Master   => Slave
+      int16_t   speedMaster;    // Arduino  => Master
+      int16_t   speedSlave;     // Master   => Slave
+      int16_t   speedSlave_meas;// Slave    => Master         => Arduino
+      int16_t   bateryVoltage;  // Master   => Slave/Arduino
+      uint16_t  checksum;       // 
+    } SerialUart2;
+  #endif
+#endif
+
 #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
     typedef struct{
       uint16_t  start;
@@ -97,8 +121,11 @@ void usart2_rx_check(void);
 #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
 void usart_process_debug(uint8_t *userCommand, uint32_t len);
 #endif
-#if defined(CONTROL_SERIAL_USART2) || defined(CONTROL_SERIAL_USART1)
-void usart_process_command(SerialCommand *command_in, SerialCommand *command_out, uint8_t usart_idx);
+#if defined(CONTROL_SERIAL_USART1)    //  Uart1 Master/Arduino
+void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx);
+#endif
+#if defined(CONTROL_SERIAL_USART2)    //  Uart2 Master/Slave
+void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx);
 #endif
 #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
 void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sideboard_out, uint8_t usart_idx);

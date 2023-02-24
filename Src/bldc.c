@@ -66,6 +66,7 @@ static uint8_t  buzzerPrev  = 0;
 static uint8_t  buzzerIdx   = 0;
 
 uint8_t        enable       = 0;        // initially motors are disabled for SAFETY
+uint16_t       enableMotors = 0;        // message from uart1
 static uint8_t enableFin    = 0;
 
 static const uint16_t pwm_res  = 64000000 / 2 / PWM_FREQ; // = 2000
@@ -79,8 +80,9 @@ static int16_t offsetrrC    = 2000;
 static int16_t offsetdcr    = 2000;
 
 int16_t        batVoltage       = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE;
+#ifdef BOARD_MASTER
 static int32_t batVoltageFixdt  = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE << 16;  // Fixed-point filter output initialized at 400 V*100/cell = 4 V/cell converted to fixed-point
-
+#endif
 // =================================
 // DMA interrupt frequency =~ 16 kHz
 // =================================

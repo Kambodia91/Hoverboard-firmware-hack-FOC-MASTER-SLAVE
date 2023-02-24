@@ -175,7 +175,7 @@
 // ############################## DEFAULT SETTINGS ############################
 // Default settings will be applied at the end of this config file if not set before
 #define INACTIVITY_TIMEOUT        8       // Minutes of not driving until poweroff. it is not very precise.
-#define BEEPS_BACKWARD            1       // 0 or 1
+#define BEEPS_BACKWARD            0       // 0 or 1
 #define ADC_MARGIN                100     // ADC input margin applied on the raw ADC min and max to make sure the MIN and MAX values are reached even in the presence of noise
 #define ADC_PROTECT_TIMEOUT       100     // ADC Protection: number of wrong / missing input commands before safety state is taken
 #define ADC_PROTECT_THRESH        200     // ADC Protection threshold below/above the MIN/MAX ADC values
@@ -315,16 +315,16 @@
   //#define DEBUG_SERIAL_USART1           // 
  
   #ifdef BOARD_MASTER
-  #define CONTROL_SERIAL_USART2  0    // GET Mesages from SLAVE
-  #define FEEDBACK_SERIAL_USART2      // SEND Mesages to SLAVE
+  #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
+  #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
 
-  #define CONTROL_SERIAL_USART1  0    //  For Arduino control // check the hoverSerial.ino
-  #define FEEDBACK_SERIAL_USART1      //  For Arduino control // check the hoverSerial.ino
+  #define CONTROL_SERIAL_USART1  0    // ARDUINO  => MASTER  // check the hoverSerial.ino
+  #define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
   #endif
 
   #ifdef BOARD_SLAVE
-  #define CONTROL_SERIAL_USART2  0    // GET Mesages to MASTER
-  #define FEEDBACK_SERIAL_USART2      // SEND Mesages to MASTER
+  #define CONTROL_SERIAL_USART2  0    // MASTER   => SLAVE
+  #define FEEDBACK_SERIAL_USART2      // SLAVE    => MASTER
   #endif
 
   #define PRI_INPUT1             3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
