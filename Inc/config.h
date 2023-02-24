@@ -315,7 +315,7 @@
   //#define DEBUG_SERIAL_USART1           // 
  
   #ifdef BOARD_MASTER
-  #define CONTROL_SERIAL_USART2  0    // GET Mesages to SLAVE
+  #define CONTROL_SERIAL_USART2  0    // GET Mesages from SLAVE
   #define FEEDBACK_SERIAL_USART2      // SEND Mesages to SLAVE
 
   #define CONTROL_SERIAL_USART1  0    //  For Arduino control // check the hoverSerial.ino
