@@ -111,13 +111,15 @@ void electricBrake(uint16_t speedBlend, uint8_t reverseDir);
 void cruiseControl(uint8_t button);
 int  checkInputType(int16_t min, int16_t mid, int16_t max);
 
-// Input Functions
+// Input/Output Functions
 void calcInputCmd(InputStruct *in, int16_t out_min, int16_t out_max);
 void readInputRaw(void);
 void handleTimeout(void);
 void readCommand(void);
-void usart1_rx_check(void);
-void usart2_rx_check(void);
+void usart1_rx_check(void);   // CHECK  // Master <=  Arduino.
+void usart1_tx_Send(void);    // SEND   // Master  => Arduino.
+void usart2_rx_check(void);   // CHECK  // Master <=> Slave.
+void usart2_tx_Send(void);    // SEND   // Master <=> Slave.
 #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
 void usart_process_debug(uint8_t *userCommand, uint32_t len);
 #endif
@@ -138,6 +140,7 @@ void sideboardSensors(uint8_t sensors);
 // Poweroff Functions
 void saveConfig(void);
 void poweroff(void);
+void chargeCheck(void);
 void poweroffPressCheck(void);
 
 // Filtering Functions

@@ -109,9 +109,11 @@ uint8_t  timeoutFlgADC    = 0;          // Timeout Flag for ADC Protection:    0
 uint8_t  timeoutFlgSerial = 0;          // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 
 int16_t batVoltageCalib;                // V-bat from Master.
+int16_t board_temp_deg_c;        // global variable for calibrated temperature in degrees Celsius
 int16_t speedSlave_meas;         // SpeedL_meas from Slave.
 int16_t empty_meas_From_Slave;          // Empty.
 int16_t enableMotors;                   // Command enable motors from uart1
+
 
 uint8_t  ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t  ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
@@ -147,6 +149,43 @@ static int16_t INPUT_MIN;             // [-] Input target minimum limitation
 
 #if defined(CONTROL_ADC)
 static uint16_t timeoutCntADC = ADC_PROTECT_TIMEOUT;  // Timeout counter for ADC Protection
+#endif
+
+#if defined(FEEDBACK_SERIAL_USART1)
+//Send to USART1//
+typedef struct{
+  uint16_t  start;
+  int16_t   cmd1;
+  int16_t   cmd2;
+  int16_t   speedR_meas;
+  int16_t   speedL_meas;
+  int16_t   batVoltage;
+  int16_t   boardTemp;
+  uint16_t  cmdLed;
+  uint16_t  checksum;
+} SerialFeedback;
+static SerialFeedback Feedback;
+#endif
+
+#if defined(FEEDBACK_SERIAL_USART2)
+//Send to USART2//
+typedef struct{
+  uint16_t  start;          // Master/Slave
+  int16_t   enableMotors;   // Master
+  int16_t   speedMaster;    // Master
+  int16_t   speedSlave;     // Master
+  int16_t   speedSlave_meas;// Slave
+  int16_t   bateryVoltage;  // Slave
+  uint16_t  checksum;       // Master/Slave
+} SerialSend_Usart2;
+static SerialSend_Usart2 Send_Usart2;
+
+#endif
+#if defined(FEEDBACK_SERIAL_USART2)
+//static uint8_t sideboard_leds_L;
+#endif
+#if defined(FEEDBACK_SERIAL_USART1)
+static uint8_t sideboard_leds_R;
 #endif
 
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
@@ -875,6 +914,7 @@ void readInputRaw(void) {
         #ifdef BOARD_SLAVE                                    // RX UART2
         enableMotors      =  commandL.enableMotors;           // BOARD MASTER => Message enableMotors     => BOARD SLAVE.
         input1[inIdx].raw = -commandL.speedSlave;             // BOARD MASTER => Message speedSlave       => BOARD SLAVE.
+        input2[inIdx].raw =  0U;              
         batVoltageCalib   =  commandL.bateryVoltage;          // BOARD MASTER => Message bateryVoltage    => BOARD SLAVE.
         #endif
         // Message Slave => Master
@@ -1051,7 +1091,7 @@ void handleTimeout(void) {
       ctrlModReq  = OPEN_MODE;                                          // Request OPEN_MODE. This will bring the motor power to 0 in a controlled way
       input1[inIdx].cmd  = 0;
       input2[inIdx].cmd  = 0;
-      enableMotors       = 0;
+      //enableMotors       = 0;
     } else {
       ctrlModReq  = ctrlModReqRaw;                                      // Follow the Mode request
     }
@@ -1227,14 +1267,14 @@ void usart1_rx_check(void)
     ptr = (uint8_t *)&Sideboard_R_raw;                                  // Initialize the pointer with Sideboard_raw address
     if (pos > old_pos && (pos - old_pos) == Sideboard_R_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], Sideboard_R_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
+      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 1);       // Process data
     } else if ((rx_buffer_R_len - old_pos + pos) == Sideboard_R_len) {  // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in Sideboard_raw
         memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
+      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 1);       // Process data
     }
   }
   #endif // SIDEBOARD_SERIAL_USART1
@@ -1265,7 +1305,7 @@ void usart_process_debug(uint8_t *userCommand, uint32_t len)
  * - if the command_in data is valid (correct START_FRAME and checksum) copy the command_in to command_out
  */
 #if defined(CONTROL_SERIAL_USART1)
-void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx)
+void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx) 
 {
   #ifdef CONTROL_IBUS
     uint16_t ibus_chksum;
@@ -1281,7 +1321,7 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
           timeoutFlgSerial_L = 0;         // Clear timeout flag
           timeoutCntSerial_L = 0;         // Reset timeout counter
           #endif
-        } else if (usart_idx == 3) {      // Sideboard USART1
+        } else if (usart_idx == 1) {      // Sideboard USART1
           #ifdef CONTROL_SERIAL_USART1
           timeoutFlgSerial_R = 0;         // Clear timeout flag
           timeoutCntSerial_R = 0;         // Reset timeout counter
@@ -1307,7 +1347,7 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
 #endif
 
 #if defined(CONTROL_SERIAL_USART2)
-void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx)
+void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx) 
 {
   #ifdef CONTROL_IBUS
     uint16_t ibus_chksum;
@@ -1323,7 +1363,7 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
           timeoutFlgSerial_L = 0;         // Clear timeout flag
           timeoutCntSerial_L = 0;         // Reset timeout counter
           #endif
-        } else if (usart_idx == 3) {      // Sideboard USART1
+        } else if (usart_idx == 1) {      // Sideboard USART1
           #ifdef CONTROL_SERIAL_USART1
           timeoutFlgSerial_R = 0;         // Clear timeout flag
           timeoutCntSerial_R = 0;         // Reset timeout counter
@@ -1333,13 +1373,13 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
     }
   #else
   uint16_t checksum;
-  #ifdef BOARD_MASTER   // Master read message from SLAVE
+  
   if (command_in->start == SERIAL_START_FRAME) {
+  #ifdef BOARD_MASTER   // Master read message from SLAVE
     checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave ^ command_in->speedSlave_meas ^ command_in->bateryVoltage);
   #endif  
 
   #ifdef BOARD_SLAVE    //  Slave read message from MASTER
-  if (command_in->start == SERIAL_START_FRAME) {
     checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave ^ command_in->speedSlave_meas ^ command_in->bateryVoltage);
   #endif  
     
@@ -1351,7 +1391,6 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
       }
     }
   }
-  
   #endif
 }
 #endif
@@ -1373,7 +1412,7 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
         timeoutCntSerial_L  = 0;        // Reset timeout counter
         timeoutFlgSerial_L = 0;         // Clear timeout flag
         #endif
-      } else if (usart_idx == 3) {      // Sideboard USART1
+      } else if (usart_idx == 1) {      // Sideboard USART1
         #ifdef SIDEBOARD_SERIAL_USART1
         timeoutCntSerial_R = 0;         // Reset timeout counter
         timeoutFlgSerial_R = 0;         // Clear timeout flag
@@ -1384,7 +1423,54 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
 }
 #endif
 
+#if defined(FEEDBACK_SERIAL_USART1)
+void usart1_tx_Send(void) 
+{ //USART1 MASTER => ARDUINO//
+  Feedback.start	        = (uint16_t)SERIAL_START_FRAME;
+  Feedback.cmd1           = (int16_t)input1[inIdx].cmd;               // MASTER   => cmd1              => ARDUINO.
+  Feedback.cmd2           = (int16_t)input2[inIdx].cmd;               // MASTER   => cmd2              => ARDUINO.
+  Feedback.speedR_meas	  = (int16_t)rtY_Right.n_mot;                 // MASTER   => speedR_meas       => ARDUINO.
+  Feedback.speedL_meas	  = (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas   => MASTER   => speedL_meas       => ARDUINO.
+  Feedback.batVoltage	    = (int16_t)batVoltageCalib;                 // MASTER   => enableMotors      => ARDUINO.
+  Feedback.boardTemp	    = (int16_t)board_temp_deg_c;                // MASTER   => enableMotors      => ARDUINO.
+        
+  if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
+    Feedback.cmdLed     = (uint16_t)sideboard_leds_R;
+    Feedback.checksum   = (uint16_t)(Feedback.start ^ Feedback.cmd1 ^ Feedback.cmd2 ^ Feedback.speedR_meas ^ Feedback.speedL_meas ^ Feedback.batVoltage ^ Feedback.boardTemp ^ Feedback.cmdLed);
+    // TR USART1
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&Feedback, sizeof(Feedback));
+  }
+}
+#endif
 
+#if defined(FEEDBACK_SERIAL_USART2)
+void usart2_tx_Send(void) 
+{ //USART2 MASTER => SLAVE//
+  #ifdef BOARD_MASTER
+    Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
+    Send_Usart2.enableMotors      = (int16_t)enableMotors;              // MASTER   => enableMotors      => SLAVE.
+    Send_Usart2.speedMaster       = (int16_t)0U;                        // MASTER   => speedMaster       => SLAVE.
+    Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
+    Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas   => SLAVE.
+    Send_Usart2.bateryVoltage	    = (int16_t)batVoltageCalib;           // MASTER   => bateryVoltage     => SLAVE.
+  #endif
+  //USART2 SLAVE => MASTER//
+  #ifdef BOARD_SLAVE
+    Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
+    Send_Usart2.enableMotors      = (int16_t)0U;                        // SLAVE    => enableMotors      => MASTER.
+    Send_Usart2.speedMaster       = (int16_t)0U;                        // SLAVE    => speedMaster       => MASTER.
+    Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
+    Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Right.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
+    Send_Usart2.bateryVoltage	    = (int16_t)0U;                        // SLAVE    => bateryVoltage     => MASTER.
+  #endif
+        
+  if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
+    Send_Usart2.checksum   = (uint16_t)(Send_Usart2.start ^ Send_Usart2.enableMotors ^ Send_Usart2.speedMaster ^ Send_Usart2.speedSlave ^ Send_Usart2.speedSlave_meas ^ Send_Usart2.bateryVoltage);
+    // TR USART2
+    HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&Send_Usart2, sizeof(Send_Usart2));
+  }
+}
+#endif
 /* =========================== Sideboard Functions =========================== */
 
 /*
@@ -1603,6 +1689,7 @@ void saveConfig() {
 
 void poweroff(void) {
   enable = 0;
+  
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
   printf("-- Motors disabled --\r\n");
   #endif
@@ -1613,11 +1700,19 @@ void poweroff(void) {
     HAL_Delay(100);
   }
   saveConfig();
-  HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_RESET);         // Off Power 
   power = 1;
   while(1) {}
 }
 
+
+void chargeCheck(void) {
+  if(HAL_GPIO_ReadPin(CHARGER_PORT, CHARGER_PIN)) {
+    HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET);
+  } else {
+    HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET);
+  }
+}
 
 void poweroffPressCheck(void) {
   #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)

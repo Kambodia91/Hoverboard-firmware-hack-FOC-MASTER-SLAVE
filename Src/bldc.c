@@ -54,7 +54,7 @@ int16_t curL_phaA = 0, curL_phaB = 0, curL_DC = 0;
 int16_t curR_phaB = 0, curR_phaC = 0, curR_DC = 0;
 
 volatile int pwml = 0;
-volatile int pwmr = 0;
+volatile int pwm = 0;
 
 extern volatile adc_buf_t adc_buffer;
 
@@ -222,7 +222,7 @@ void DMA1_Channel1_IRQHandler(void) {
     /* Set motor inputs here */
     rtU_Right.b_motEna      = enableFin;
     rtU_Right.z_ctrlModReq  = ctrlModReq;
-    rtU_Right.r_inpTgt      = pwmr;
+    rtU_Right.r_inpTgt      = pwm;
     rtU_Right.b_hallA       = hall_ur;
     rtU_Right.b_hallB       = hall_vr;
     rtU_Right.b_hallC       = hall_wr;
