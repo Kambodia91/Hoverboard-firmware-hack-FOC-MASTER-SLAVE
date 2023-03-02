@@ -78,7 +78,7 @@ extern uint8_t timeoutFlgADC;           // Timeout Flag for for ADC Protection: 
 extern uint8_t timeoutFlgSerial;        // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 
 extern volatile int pwml;               // global variable for pwm left. -1000 to 1000
-extern volatile int pwmr;               // global variable for pwm right. -1000 to 1000
+extern volatile int pwm;               // global variable for pwm right. -1000 to 1000
 
 extern uint8_t enable;                  // global variable for motor enable
 
@@ -110,52 +110,52 @@ uint8_t backwardDrive;
 extern volatile uint32_t buzzerTimer;
 volatile uint32_t main_loop_counter;
 extern int16_t batVoltageCalib;         // global variable for calibrated battery voltage
-int16_t board_temp_deg_c;        // global variable for calibrated temperature in degrees Celsius
+extern int16_t board_temp_deg_c;        // global variable for calibrated temperature in degrees Celsius
 int16_t left_dc_curr;            // global variable for Left DC Link current 
 int16_t right_dc_curr;           // global variable for Right DC Link current
 int16_t dc_curr;                 // global variable for Total DC Link current 
-int16_t cmdL;                    // global variable for Left Command 
-int16_t cmdR;                    // global variable for Right Command 
+int16_t cmdMaster;                    // global variable for Left Command 
+int16_t cmdSlave;                    // global variable for Right Command 
 
 //------------------------------------------------------------------------
 // Local variables
 //------------------------------------------------------------------------
-#if defined(FEEDBACK_SERIAL_USART1)
-//Send to USART1//
-typedef struct{
-  uint16_t  start;
-  int16_t   cmd1;
-  int16_t   cmd2;
-  int16_t   speedR_meas;
-  int16_t   speedL_meas;
-  int16_t   batVoltage;
-  int16_t   boardTemp;
-  uint16_t  cmdLed;
-  uint16_t  checksum;
-} SerialFeedback;
-static SerialFeedback Feedback;
-#endif
+// #if defined(FEEDBACK_SERIAL_USART1)
+// //Send to USART1//
+// typedef struct{
+//   uint16_t  start;
+//   int16_t   cmd1;
+//   int16_t   cmd2;
+//   int16_t   speedR_meas;
+//   int16_t   speedL_meas;
+//   int16_t   batVoltage;
+//   int16_t   boardTemp;
+//   uint16_t  cmdLed;
+//   uint16_t  checksum;
+// } SerialFeedback;
+// static SerialFeedback Feedback;
+// #endif
 
-#if defined(FEEDBACK_SERIAL_USART2)
-//Send to USART2//
-typedef struct{
-  uint16_t  start;          // Master/Slave
-  int16_t   enableMotors;   // Master
-  int16_t   speedMaster;    // Master
-  int16_t   speedSlave;     // Master
-  int16_t   speedSlave_meas;// Slave
-  int16_t   bateryVoltage;  // Slave
-  uint16_t  checksum;       // Master/Slave
-} SerialSend_Usart2;
-static SerialSend_Usart2 Send_Usart2;
+// #if defined(FEEDBACK_SERIAL_USART2)
+// //Send to USART2//
+// typedef struct{
+//   uint16_t  start;          // Master/Slave
+//   int16_t   enableMotors;   // Master
+//   int16_t   speedMaster;    // Master
+//   int16_t   speedSlave;     // Master
+//   int16_t   speedSlave_meas;// Slave
+//   int16_t   bateryVoltage;  // Slave
+//   uint16_t  checksum;       // Master/Slave
+// } SerialSend_Usart2;
+// static SerialSend_Usart2 Send_Usart2;
 
-#endif
-#if defined(FEEDBACK_SERIAL_USART2)
-//static uint8_t sideboard_leds_L;
-#endif
-#if defined(FEEDBACK_SERIAL_USART1)
-static uint8_t sideboard_leds_R;
-#endif
+// #endif
+// #if defined(FEEDBACK_SERIAL_USART2)
+// //static uint8_t sideboard_leds_L;
+// #endif
+// #if defined(FEEDBACK_SERIAL_USART1)
+// static uint8_t sideboard_leds_R;
+// #endif
 
 #ifdef VARIANT_TRANSPOTTER
   uint8_t  nunchuk_connected;
@@ -169,13 +169,13 @@ static uint8_t sideboard_leds_R;
   static uint16_t transpotter_counter = 0;
 #endif
 
-static int16_t    speed;                // local variable for speed. -1000 to 1000
 #ifndef VARIANT_TRANSPOTTER
-  static int16_t  steer;                // local variable for steering. -1000 to 1000
-  static int16_t  steerRateFixdt;       // local fixed-point variable for steering rate limiter
-  static int16_t  speedRateFixdt;       // local fixed-point variable for speed rate limiter
-  static int32_t  steerFixdt;           // local fixed-point variable for steering low-pass filter
-  static int32_t  speedFixdt;           // local fixed-point variable for speed low-pass filter
+  static int16_t  speedMaster;                // local variable for steering. -1000 to 1000
+  static int16_t  speedSlave;                // local variable for speed. -1000 to 1000
+  static int16_t  speedMasterRateFixdt;       // local fixed-point variable for steering rate limiter
+  static int16_t  speedSlaveRateFixdt;       // local fixed-point variable for speed rate limiter
+  static int32_t  speedMasterFixdt;           // local fixed-point variable for steering low-pass filter
+  static int32_t  speedSlaveFixdt;           // local fixed-point variable for speed low-pass filter
 #endif
 
 static uint32_t    buzzerTimer_prev = 0;
@@ -233,6 +233,7 @@ int main(void) {
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
 
+  //HAL_Delay(1000);
   poweronMelody();
 //test delay//
  // HAL_Delay(1000);
@@ -286,7 +287,7 @@ int main(void) {
           ABS(input1[inIdx].cmd) < 50 && ABS(input2[inIdx].cmd) < 50){
         beepShort(6);                     // make 2 beeps indicating the motor enable
         beepShort(4); HAL_Delay(100);
-        steerFixdt = speedFixdt = 0;      // reset filters
+        speedMasterFixdt = speedSlaveFixdt = 0;      // reset filters
         enable = 1;                       // enable motors
         #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("-- Motors enabled --\r\n");
@@ -341,12 +342,12 @@ int main(void) {
       #endif
 
       // ####### LOW-PASS FILTER #######
-      rateLimiter16(input1[inIdx].cmd, rate, &steerRateFixdt);
-      //rateLimiter16(input2[inIdx].cmd, rate, &speedRateFixdt);
-      filtLowPass32(steerRateFixdt >> 4, FILTER, &steerFixdt);
-      //filtLowPass32(speedRateFixdt >> 4, FILTER, &speedFixdt);
-      steer = (int16_t)(steerFixdt >> 16);  // convert fixed-point to integer
-      //speed = (int16_t)(speedFixdt >> 16);  // convert fixed-point to integer
+      rateLimiter16(input1[inIdx].cmd, rate, &speedMasterRateFixdt);
+      rateLimiter16(input2[inIdx].cmd, rate, &speedSlaveRateFixdt);
+      filtLowPass32(speedMasterRateFixdt  >> 4, FILTER, &speedMasterFixdt);
+      filtLowPass32(speedSlaveRateFixdt   >> 4, FILTER, &speedSlaveFixdt);
+      speedMaster   = (int16_t)(speedMasterFixdt  >> 16);  // convert fixed-point to integer
+      speedSlave    = (int16_t)(speedSlaveFixdt   >> 16);  // convert fixed-point to integer
 
       // ####### VARIANT_HOVERCAR #######
       #ifdef VARIANT_HOVERCAR
@@ -369,11 +370,11 @@ int main(void) {
 
       #if defined(TANK_STEERING) && !defined(VARIANT_HOVERCAR) && !defined(VARIANT_SKATEBOARD) 
         // Tank steering (no mixing)
-        cmdL = steer; 
-        cmdR = 0;
+        cmdMaster   = speedMaster; 
+        cmdSlave    = speedSlave;
       #else 
         // ####### MIXER #######
-        mixerFcn(speed << 4, steer << 4, &cmdR, &cmdL);   // This function implements the equations above
+        mixerFcn(speedMaster << 4, speedSlave << 4, &cmdMaster, &cmdSlave);   // This function implements the equations above
       #endif
 
 
@@ -387,9 +388,9 @@ int main(void) {
         pwml = -cmdL;
       #else
       if (enableMotors){
-        pwmr = cmdL;
+        pwm = cmdMaster;
       } else {
-        pwmr = 0U;
+        pwm = 0U;
       }
       #endif
     #endif
@@ -500,10 +501,9 @@ int main(void) {
       sideboardSensors((uint8_t)Sideboard_R.sensors);
     #endif
     #if defined(FEEDBACK_SERIAL_USART1)
-      sideboardLeds(&sideboard_leds_R);
+      //sideboardLeds(&sideboard_leds_R);
     #endif
     
-
     // ####### CALC BOARD TEMPERATURE #######
     filtLowPass32(adc_buffer.temp, TEMP_FILT_COEF, &board_temp_adcFixdt);
     board_temp_adcFilt  = (int16_t)(board_temp_adcFixdt >> 16);  // convert fixed-point to integer
@@ -513,6 +513,7 @@ int main(void) {
     #ifdef BOARD_MASTER
     batVoltageCalib = batVoltage * BAT_CALIB_REAL_VOLTAGE / BAT_CALIB_ADC;
     #endif
+
     // ####### CALC DC LINK CURRENT #######
     left_dc_curr  = -(rtU_Left.i_DCLink * 100) / A2BIT_CONV;   // Left DC Link Current * 100 
     right_dc_curr = -(rtU_Right.i_DCLink * 100) / A2BIT_CONV;  // Right DC Link Current * 100
@@ -540,52 +541,19 @@ int main(void) {
     // ####### FEEDBACK SERIAL OUT #######
     #if defined(FEEDBACK_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART1)
       if (main_loop_counter % 2 == 0) {    // Send data periodically every 10 ms
-        
-        #if defined(FEEDBACK_SERIAL_USART1)
-        //USART1 MASTER => ARDUINO//
-        Feedback.start	        = (uint16_t)SERIAL_START_FRAME;
-        Feedback.cmd1           = (int16_t)input1[inIdx].cmd;               // MASTER   => cmd1              => ARDUINO.
-        Feedback.cmd2           = (int16_t)input2[inIdx].cmd;               // MASTER   => cmd2              => ARDUINO.
-        Feedback.speedR_meas	  = (int16_t)rtY_Right.n_mot;                 // MASTER   => speedR_meas       => ARDUINO.
-        Feedback.speedL_meas	  = (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas   => MASTER   => speedL_meas       => ARDUINO.
-        Feedback.batVoltage	    = (int16_t)batVoltageCalib;                 // MASTER   => enableMotors      => ARDUINO.
-        Feedback.boardTemp	    = (int16_t)board_temp_deg_c;                // MASTER   => enableMotors      => ARDUINO.
-        
-        if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
-          Feedback.cmdLed     = (uint16_t)sideboard_leds_R;
-          Feedback.checksum   = (uint16_t)(Feedback.start ^ Feedback.cmd1 ^ Feedback.cmd2 ^ Feedback.speedR_meas ^ Feedback.speedL_meas ^ Feedback.batVoltage ^ Feedback.boardTemp ^ Feedback.cmdLed);
-          // TR USART1
-          HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&Feedback, sizeof(Feedback));
-        }
-        #endif
+         #if defined(FEEDBACK_SERIAL_USART1)
+        // //USART1 MASTER => ARDUINO//
+        usart1_tx_Send();
+         #endif
         #if defined(FEEDBACK_SERIAL_USART2)
         //USART2 MASTER => SLAVE//
-        #ifdef BOARD_MASTER
-        Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
-        Send_Usart2.enableMotors      = (int16_t)enableMotors;              // MASTER   => enableMotors      => SLAVE.
-        Send_Usart2.speedMaster       = (int16_t)0U;                        // MASTER   => speedMaster       => SLAVE.
-        Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
-        Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas   => SLAVE.
-        Send_Usart2.bateryVoltage	    = (int16_t)batVoltageCalib;           // MASTER   => bateryVoltage     => SLAVE.
-        #endif
-        //USART2 SLAVE => MASTER//
-        #ifdef BOARD_SLAVE
-        Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
-        Send_Usart2.enableMotors      = (int16_t)0U;                        // SLAVE    => enableMotors      => MASTER.
-        Send_Usart2.speedMaster       = (int16_t)0U;                        // SLAVE    => speedMaster       => MASTER.
-        Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
-        Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Right.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
-        Send_Usart2.bateryVoltage	    = (int16_t)0U;                        // SLAVE    => bateryVoltage     => MASTER.
-        #endif
-        
-        if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
-          Send_Usart2.checksum   = (uint16_t)(Send_Usart2.start ^ Send_Usart2.enableMotors ^ Send_Usart2.speedMaster ^ Send_Usart2.speedSlave ^ Send_Usart2.speedSlave_meas ^ Send_Usart2.bateryVoltage);
-          // TR USART2
-          HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&Send_Usart2, sizeof(Send_Usart2));
-        }
+        usart2_tx_Send();
         #endif
       }
     #endif
+
+    // ####### CHARGE PORT CHECK #######
+    chargeCheck();
 
     // ####### POWEROFF BY POWER-BUTTON #######
     poweroffPressCheck();
@@ -616,7 +584,7 @@ int main(void) {
       beepCount(0, 10, 6);
     } else if (BAT_LVL2_ENABLE && batVoltage < BAT_LVL2) {                                            // 1 beep slow (medium pitch): Low bat 2
       beepCount(0, 10, 30);
-    } else if (BEEPS_BACKWARD && (((cmdR < -50 || cmdL < -50) && speedAvg < 0) || MultipleTapBrake.b_multipleTap)) { // 1 beep fast (high pitch): Backward spinning motors
+    } else if (BEEPS_BACKWARD && (((cmdMaster < -50 || cmdSlave < -50) && speedAvg < 0) || MultipleTapBrake.b_multipleTap)) { // 1 beep fast (high pitch): Backward spinning motors
       beepCount(0, 5, 1);
       backwardDrive = 1;
     } else {  // do not beep
@@ -628,7 +596,7 @@ int main(void) {
     inactivity_timeout_counter++;
 
     // ####### INACTIVITY TIMEOUT #######
-    if (abs(cmdL) > 50 || abs(cmdR) > 50) {
+    if (abs(cmdMaster) > 50 || abs(cmdSlave) > 50) {
       inactivity_timeout_counter = 0;
     }
 
