@@ -11,13 +11,18 @@ Compared to the commutation method, this new FOC control method offers superior 
  - smooth torque output and improved motor efficiency. Thus, lower energy consumption
  - field weakening to increase maximum speed range
 
+---
 ## Hardware
 The originals are MM32 processors. We need to replace them with STM32. The program is used to support the [STM32F103CBT6](https://github.com/Kambodia91/Hoverboard-firmware-hack-FOC-MASTER-SLAVE/blob/main/docs/literature/STM32F103xB.pdf) processor. 
 More information can be found in the [docs](/docs/).
 
 Board pinouts: Slave / Master
 ![mainboard_pinout](/docs/Board%20MASTER-SLAVE.png)
- 
+
+---
+## My Project
+I am trying to create a 4-wheeled vehicle (rigid without turning the wheels) using 2 howerboards for the wheels, communication will be made using uart and esp32. Currently, I was thinking about the actual position in space of the vehicle and came to the conclusion that the best solution would be to use the DW1000. In the future, there may be a lidar sensor. A lawn mower will be installed on the wheels to mow the lawn automatically. I invite you to the docs tab there are more [photos](/docs/pictures/) from the construction.
+
 ---
 ## FOC Firmware
  
@@ -29,6 +34,7 @@ In this firmware 3 control types are available, it can be set in config.h file v
   - **SPEED MODE(SPD_MODE)**: in this mode a closed-loop controller realizes the input speed RPM target by rejecting any of the disturbance (resistive load) applied to the motor. Recommended for robotics applications or constant speed applications.
   - **TORQUE MODE(TRQ_MODE)**: in this mode the input torque target is realized. This mode enables motor "freewheeling" when the torque target is `0`. Recommended for most applications with a sitting human driver.
 
+---
 ### FOC Webview
 
 To explore the controller without a Matlab/Simulink installation click on the link below:
