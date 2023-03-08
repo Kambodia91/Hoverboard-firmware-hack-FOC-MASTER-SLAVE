@@ -72,6 +72,11 @@
 #define RIGHT_TIM_WL_PIN    GPIO_PIN_15
 #define RIGHT_TIM_WL_PORT   GPIOB
 
+// TIM1 INPUT
+
+#define RIGHT_TIM_BKIN_PIN  GPIO_PIN_12
+#define RIGHT_TIM_BKIN_PORT GPIOB
+
 // ADC INPUT
 
 #define RIGHT_DC_CUR_PIN    GPIO_PIN_5                        // DC Current 

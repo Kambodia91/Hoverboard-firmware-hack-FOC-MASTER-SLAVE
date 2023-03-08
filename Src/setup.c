@@ -292,16 +292,16 @@ void MX_GPIO_Init(void) {
 
   GPIO_InitStruct.Mode  = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 
 
   GPIO_InitStruct.Pin = RIGHT_HALL_U_PIN;
-  HAL_GPIO_Init(RIGHT_HALL_U_PORT, &GPIO_InitStruct);
+  HAL_GPIO_Init(RIGHT_HALL_U_PORT, &GPIO_InitStruct);   // HALL
   GPIO_InitStruct.Pin = RIGHT_HALL_V_PIN;
   HAL_GPIO_Init(RIGHT_HALL_V_PORT, &GPIO_InitStruct);
   GPIO_InitStruct.Pin = RIGHT_HALL_W_PIN;
   HAL_GPIO_Init(RIGHT_HALL_W_PORT, &GPIO_InitStruct);
-
+  GPIO_InitStruct.Pin = RIGHT_TIM_BKIN_PIN;             // BKIN
+  HAL_GPIO_Init(RIGHT_TIM_BKIN_PORT, &GPIO_InitStruct); // BKIN
 
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   
@@ -322,6 +322,7 @@ void MX_GPIO_Init(void) {
 
 
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 
 
   GPIO_InitStruct.Pin = LED_RED_PIN;                  // PB4
@@ -414,7 +415,7 @@ void MX_TIM_Init(void) {
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_ENABLE;
   sBreakDeadTimeConfig.LockLevel        = TIM_LOCKLEVEL_OFF;
   sBreakDeadTimeConfig.DeadTime         = DEAD_TIME;
-  sBreakDeadTimeConfig.BreakState       = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakState       = TIM_BREAK_ENABLE;  // PB13 EMERGENCY STOP 
   sBreakDeadTimeConfig.BreakPolarity    = TIM_BREAKPOLARITY_LOW;
   sBreakDeadTimeConfig.AutomaticOutput  = TIM_AUTOMATICOUTPUT_DISABLE;
   HAL_TIMEx_ConfigBreakDeadTime(&htim_right, &sBreakDeadTimeConfig);

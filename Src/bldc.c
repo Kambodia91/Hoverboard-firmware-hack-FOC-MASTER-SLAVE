@@ -92,7 +92,7 @@ void DMA1_Channel1_IRQHandler(void) {
   // HAL_GPIO_WritePin(LED_PORT, LED_PIN, 1);
   // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
 
-  if(offsetcount < 2000) {  // calibrate ADC offsets
+  if(offsetcount < 5000) {  // calibrate ADC offsets
     offsetcount++;
     //offsetrlA = (adc_buffer.rlA + offsetrlA) / 2; // Unnecessary
     //offsetrlB = (adc_buffer.rlB + offsetrlB) / 2; // Unnecessary

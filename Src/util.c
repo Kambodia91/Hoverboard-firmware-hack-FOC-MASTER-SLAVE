@@ -1375,14 +1375,7 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
   uint16_t checksum;
   
   if (command_in->start == SERIAL_START_FRAME) {
-  #ifdef BOARD_MASTER   // Master read message from SLAVE
     checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave ^ command_in->speedSlave_meas ^ command_in->bateryVoltage);
-  #endif  
-
-  #ifdef BOARD_SLAVE    //  Slave read message from MASTER
-    checksum = (uint16_t)(command_in->start ^ command_in->enableMotors ^ command_in->speedMaster ^ command_in->speedSlave ^ command_in->speedSlave_meas ^ command_in->bateryVoltage);
-  #endif  
-    
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
       if (usart_idx == 2) {             // Sideboard USART2
