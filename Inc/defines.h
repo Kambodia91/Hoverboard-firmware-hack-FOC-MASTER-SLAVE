@@ -85,7 +85,7 @@
 #define RIGHT_U_CUR_PORT    GPIOA
 #define RIGHT_V_CUR_PIN     GPIO_PIN_1                        // Phase C Current 
 #define RIGHT_V_CUR_PORT    GPIOA
-#define RIGHT_TEMP_PIN      GPIO_PIN_1                        // Temperature wheel
+#define RIGHT_TEMP_PIN      GPIO_PIN_1                        // White wire from wheel
 #define RIGHT_TEMP_PORT     GPIOB
 #define DCLINK_PIN          GPIO_PIN_4                        // V Bat
 #define DCLINK_PORT         GPIOA

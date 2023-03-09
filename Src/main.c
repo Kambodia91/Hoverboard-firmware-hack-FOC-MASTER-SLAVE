@@ -120,42 +120,6 @@ int16_t cmdSlave;                    // global variable for Right Command
 //------------------------------------------------------------------------
 // Local variables
 //------------------------------------------------------------------------
-// #if defined(FEEDBACK_SERIAL_USART1)
-// //Send to USART1//
-// typedef struct{
-//   uint16_t  start;
-//   int16_t   cmd1;
-//   int16_t   cmd2;
-//   int16_t   speedR_meas;
-//   int16_t   speedL_meas;
-//   int16_t   batVoltage;
-//   int16_t   boardTemp;
-//   uint16_t  cmdLed;
-//   uint16_t  checksum;
-// } SerialFeedback;
-// static SerialFeedback Feedback;
-// #endif
-
-// #if defined(FEEDBACK_SERIAL_USART2)
-// //Send to USART2//
-// typedef struct{
-//   uint16_t  start;          // Master/Slave
-//   int16_t   enableMotors;   // Master
-//   int16_t   speedMaster;    // Master
-//   int16_t   speedSlave;     // Master
-//   int16_t   speedSlave_meas;// Slave
-//   int16_t   bateryVoltage;  // Slave
-//   uint16_t  checksum;       // Master/Slave
-// } SerialSend_Usart2;
-// static SerialSend_Usart2 Send_Usart2;
-
-// #endif
-// #if defined(FEEDBACK_SERIAL_USART2)
-// //static uint8_t sideboard_leds_L;
-// #endif
-// #if defined(FEEDBACK_SERIAL_USART1)
-// static uint8_t sideboard_leds_R;
-// #endif
 
 #ifdef VARIANT_TRANSPOTTER
   uint8_t  nunchuk_connected;
@@ -196,9 +160,7 @@ int main(void) {
 
   __HAL_RCC_AFIO_CLK_ENABLE();
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_AFIO_REMAP_SWJ_NOJTAG(); //pin off jtag itc.
-  __HAL_AFIO_REMAP_USART1_ENABLE();  // Change pinOut usart1
-
+  
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
   /* System interrupt init*/
   /* MemoryManagement_IRQn interrupt configuration */
@@ -233,10 +195,7 @@ int main(void) {
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
 
-  //HAL_Delay(1000);
   poweronMelody();
-//test delay//
- // HAL_Delay(1000);
 
   HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
   
@@ -655,7 +614,7 @@ void SystemClock_Config(void) {
 
   PeriphClkInit.PeriphClockSelection    = RCC_PERIPHCLK_ADC;
   PeriphClkInit.AdcClockSelection       = RCC_ADCPCLK2_DIV8;  // 8 MHz
-  // PeriphClkInit.AdcClockSelection       = RCC_ADCPCLK2_DIV4;  // 16 MHz
+
   HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
 
   /**Configure the Systick interrupt time

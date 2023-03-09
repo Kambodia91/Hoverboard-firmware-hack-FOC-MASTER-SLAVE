@@ -283,8 +283,10 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 void MX_GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct;
  
- 
+ /* GPIO Remap */
   __HAL_AFIO_REMAP_SWJ_NOJTAG();        // Disable = JNRST, JTDO, JTDI. Enable = PIN PB4, PB3, PA15.
+  __HAL_AFIO_REMAP_USART1_ENABLE();     // Change pinOut usart1
+  
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
