@@ -300,24 +300,24 @@ void MX_GPIO_Init(void) {
   HAL_GPIO_Init(RIGHT_HALL_V_PORT, &GPIO_InitStruct);
   GPIO_InitStruct.Pin = RIGHT_HALL_W_PIN;
   HAL_GPIO_Init(RIGHT_HALL_W_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = RIGHT_TIM_BKIN_PIN;             // BKIN
-  HAL_GPIO_Init(RIGHT_TIM_BKIN_PORT, &GPIO_InitStruct); // BKIN
+  GPIO_InitStruct.Pin = RIGHT_TIM_BKIN_PIN;             // BKIN PIN
+  HAL_GPIO_Init(RIGHT_TIM_BKIN_PORT, &GPIO_InitStruct); // BKIN PORT
 
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   
   
-  GPIO_InitStruct.Pin = CHARGER_PIN;                  // 
+  GPIO_InitStruct.Pin = CHARGER_PIN;                  // Charger
   HAL_GPIO_Init(CHARGER_PORT, &GPIO_InitStruct);
   
 
   GPIO_InitStruct.Pull = GPIO_NOPULL;
 
 
-  GPIO_InitStruct.Pin = BUTTON_PIN;
+  GPIO_InitStruct.Pin = BUTTON_PIN;                   // Power Switch
   HAL_GPIO_Init(BUTTON_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = BUTTON1_PIN;
+  GPIO_InitStruct.Pin = BUTTON1_PIN;                  // Button1 (closer to the speaker)
   HAL_GPIO_Init(BUTTON1_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = BUTTON2_PIN;
+  GPIO_InitStruct.Pin = BUTTON2_PIN;                  // Button2 
   HAL_GPIO_Init(BUTTON2_PORT, &GPIO_InitStruct);
 
 
@@ -415,8 +415,8 @@ void MX_TIM_Init(void) {
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_ENABLE;
   sBreakDeadTimeConfig.LockLevel        = TIM_LOCKLEVEL_OFF;
   sBreakDeadTimeConfig.DeadTime         = DEAD_TIME;
-  sBreakDeadTimeConfig.BreakState       = TIM_BREAK_ENABLE;  // PB13 EMERGENCY STOP 
-  sBreakDeadTimeConfig.BreakPolarity    = TIM_BREAKPOLARITY_LOW;
+  sBreakDeadTimeConfig.BreakState       = TIM_BREAK_ENABLE;             // PB12 EMERGENCY STOP 
+  sBreakDeadTimeConfig.BreakPolarity    = TIM_BREAKPOLARITY_LOW;        // PB12 Active Low
   sBreakDeadTimeConfig.AutomaticOutput  = TIM_AUTOMATICOUTPUT_DISABLE;
   HAL_TIMEx_ConfigBreakDeadTime(&htim_right, &sBreakDeadTimeConfig);
 
@@ -486,7 +486,6 @@ void MX_TIM_Init(void) {
 void MX_ADC1_Init(void) {
   ADC_MultiModeTypeDef multimode;
   ADC_ChannelConfTypeDef sConfig;
-
   __HAL_RCC_ADC1_CLK_ENABLE();
 
   hadc1.Instance                   = ADC1;
@@ -499,25 +498,23 @@ void MX_ADC1_Init(void) {
   HAL_ADC_Init(&hadc1);
   
 
-  /**Configure the ADC multi-mode
-    */
+  /**Configure the ADC multi-mode*/
   multimode.Mode = ADC_DUALMODE_REGSIMULT;
   HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode);
 
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  sConfig.Channel = ADC_CHANNEL_5;  // pc1 left cur  ->  right
+  sConfig.Channel = ADC_CHANNEL_5;                      // PA5 Current Batery
   sConfig.Rank    = 1;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
-  // sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.SamplingTime = ADC_SAMPLETIME_7CYCLES_5;
-  sConfig.Channel = ADC_CHANNEL_1;  // pa0 right a   ->  left
+  sConfig.Channel = ADC_CHANNEL_1;                      // PA1 BLDC Current Phase B
   sConfig.Rank    = 2;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
   //temperature requires at least 17.1uS sampling time
   sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
-  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;  // internal temp
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;             // Internal temp
   sConfig.Rank    = 3;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
@@ -541,13 +538,8 @@ void MX_ADC1_Init(void) {
 /* ADC2 init function */
 void MX_ADC2_Init(void) {
   ADC_ChannelConfTypeDef sConfig;
-
   __HAL_RCC_ADC2_CLK_ENABLE();
 
-  // HAL_ADC_DeInit(&hadc2);
-  // hadc2.Instance->CR2 = 0;
-  /**Common config
-    */
   hadc2.Instance                   = ADC2;
   hadc2.Init.ScanConvMode          = ADC_SCAN_ENABLE;
   hadc2.Init.ContinuousConvMode    = DISABLE;
@@ -559,17 +551,16 @@ void MX_ADC2_Init(void) {
 
  
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  sConfig.Channel = ADC_CHANNEL_4;  // pc0 right cur   -> left
+  sConfig.Channel = ADC_CHANNEL_4;                  // PA4 Voltage Batery
   sConfig.Rank    = 1;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
 
-  // sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.SamplingTime = ADC_SAMPLETIME_7CYCLES_5;
-  sConfig.Channel = ADC_CHANNEL_0;  // pc3 right b   -> left
+  sConfig.Channel = ADC_CHANNEL_0;                  // PA0 BLDC Current Phase C
   sConfig.Rank    = 2;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
 
-  sConfig.Channel = ADC_CHANNEL_9;  // pc5 left c   -> right
+  sConfig.Channel = ADC_CHANNEL_9;                  // PB1 White Wire from wheel
   sConfig.Rank    = 3;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
 
