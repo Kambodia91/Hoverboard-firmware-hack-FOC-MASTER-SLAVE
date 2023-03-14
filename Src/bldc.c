@@ -92,7 +92,7 @@ void DMA1_Channel1_IRQHandler(void) {
   // HAL_GPIO_WritePin(LED_PORT, LED_PIN, 1);
   // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
 
-  if(offsetcount < 5000) {  // calibrate ADC offsets
+  if(offsetcount < 2000) {  // calibrate ADC offsets
     offsetcount++;
     //offsetrlA = (adc_buffer.rlA + offsetrlA) / 2; // Unnecessary
     //offsetrlB = (adc_buffer.rlB + offsetrlB) / 2; // Unnecessary
@@ -120,13 +120,13 @@ void DMA1_Channel1_IRQHandler(void) {
 
   // Disable PWM when current limit is reached (current chopping)
   // This is the Level 2 of current protection. The Level 1 should kick in first given by I_MOT_MAX
-  if(ABS(curL_DC) > curDC_max || enable == 0) {
+  if(ABS(curL_DC) > curDC_max || enable == 0 || enableMotors == 0) {
     LEFT_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
     LEFT_TIM->BDTR |= TIM_BDTR_MOE;
   }
 
-  if(ABS(curR_DC)  > curDC_max || enable == 0) {
+  if(ABS(curR_DC)  > curDC_max || enable == 0 || enableMotors == 0) {
     RIGHT_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
     RIGHT_TIM->BDTR |= TIM_BDTR_MOE;
@@ -173,7 +173,7 @@ void DMA1_Channel1_IRQHandler(void) {
   OverrunFlag = true;
 
   /* Make sure to stop BOTH motors in case of an error */
-  enableFin = enable && !rtY_Left.z_errCode && !rtY_Right.z_errCode;
+  enableFin = enable && !rtY_Left.z_errCode && !rtY_Right.z_errCode && enableMotors;
  
   // ========================= LEFT MOTOR ============================ 
     // Get hall sensors values

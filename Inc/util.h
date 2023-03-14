@@ -35,7 +35,7 @@
       uint8_t  checksumh;
     } SerialCommand;
   #else
-    typedef struct{ // Master/Arduino
+    typedef struct{ // RECIVER - Master/Arduino
       uint16_t  start;          // 
       int16_t   enableMotors;   // Arduino  => Master
       int16_t   speedMaster;    // Arduino  => Master
@@ -55,13 +55,14 @@
       uint8_t  checksumh;
     } SerialCommand;
   #else
-    typedef struct{ // Master/Slave
+    typedef struct{ // RECIVER - Master/Slave
       uint16_t  start;          // 
       int16_t   enableMotors;   // Master   => Slave
       int16_t   speedMaster;    // Arduino  => Master
       int16_t   speedSlave;     // Master   => Slave
       int16_t   speedSlave_meas;// Slave    => Master         => Arduino
       int16_t   bateryVoltage;  // Master   => Slave/Arduino
+      int16_t   boardTemp;      // Master  <=> Slave          => Arduino
       uint16_t  checksum;       // 
     } SerialUart2;
   #endif

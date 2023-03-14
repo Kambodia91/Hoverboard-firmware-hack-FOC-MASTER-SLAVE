@@ -55,38 +55,38 @@ extern UART_HandleTypeDef huart1;
 
 volatile uint8_t uart_buf[200];
 
+//------------------------------------------------------------------------
 // Matlab defines - from auto-code generation
-//---------------
-extern P    rtP_Left;                   /* Block parameters (auto storage) */
-extern P    rtP_Right;                  /* Block parameters (auto storage) */
-extern ExtY rtY_Left;                   /* External outputs */
-extern ExtY rtY_Right;                  /* External outputs */
-extern ExtU rtU_Left;                   /* External inputs */
-extern ExtU rtU_Right;                  /* External inputs */
-//---------------
+//------------------------------------------------------------------------
+extern P    rtP_Left;                           /* Block parameters (auto storage) */
+extern P    rtP_Right;                          /* Block parameters (auto storage) */
+extern ExtY rtY_Left;                           /* External outputs */
+extern ExtY rtY_Right;                          /* External outputs */
+extern ExtU rtU_Left;                           /* External inputs */
+extern ExtU rtU_Right;                          /* External inputs */
+//------------------------------------------------------------------------
 
-extern uint8_t     inIdx;               // input index used for dual-inputs
+extern uint8_t     inIdx;                       // input index used for dual-inputs
 extern uint8_t     inIdx_prev;
-extern InputStruct input1[];            // input structure
-extern InputStruct input2[];            // input structure
+extern InputStruct input1[];                    // input structure
+extern InputStruct input2[];                    // input structure
 
-extern int16_t speedAvg;                // Average measured speed
-extern int16_t speedAvgAbs;             // Average measured speed in absolute
-extern volatile uint32_t timeoutCntGen; // Timeout counter for the General timeout (PPM, PWM, Nunchuk)
-extern volatile uint8_t  timeoutFlgGen; // Timeout Flag for the General timeout (PPM, PWM, Nunchuk)
-extern uint8_t timeoutFlgADC;           // Timeout Flag for for ADC Protection: 0 = OK, 1 = Problem detected (line disconnected or wrong ADC data)
-extern uint8_t timeoutFlgSerial;        // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
+extern int16_t speedAvg;                        // Average measured speed
+extern int16_t speedAvgAbs;                     // Average measured speed in absolute
+extern volatile uint32_t timeoutCntGen;         // Timeout counter for the General timeout (PPM, PWM, Nunchuk)
+extern volatile uint8_t  timeoutFlgGen;         // Timeout Flag for the General timeout (PPM, PWM, Nunchuk)
+extern uint8_t timeoutFlgADC;                   // Timeout Flag for for ADC Protection: 0 = OK, 1 = Problem detected (line disconnected or wrong ADC data)
+extern uint8_t timeoutFlgSerial;                // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 
-extern volatile int pwml;               // global variable for pwm left. -1000 to 1000
-extern volatile int pwm;               // global variable for pwm right. -1000 to 1000
+extern volatile int pwml;                       // global variable for pwm left. -1000 to 1000
+extern volatile int pwm;                        // global variable for pwm right. -1000 to 1000
 
-extern uint8_t enable;                  // global variable for motor enable
+extern uint8_t enable;                          // global variable for motor enable
 
-extern int16_t speedSlave_meas;         // global variable for motor Slave speed
-extern int16_t empty_meas_From_Slave;
-extern int16_t enableMotors;            // Command from uart1
+extern int16_t speedSlave_meas;                 // global variable for motor Slave speed    
+extern int16_t enableMotors;                    // Command from uart1
 
-extern int16_t batVoltage;              // global variable for battery voltage
+extern int16_t batVoltage;                      // global variable for battery voltage
 
 #if defined(SIDEBOARD_SERIAL_USART2)
 extern SerialSideboard Sideboard_L;
@@ -109,13 +109,14 @@ extern volatile uint16_t pwm_captured_ch2_value;
 uint8_t backwardDrive;
 extern volatile uint32_t buzzerTimer;
 volatile uint32_t main_loop_counter;
-extern int16_t batVoltageCalib;         // global variable for calibrated battery voltage
-extern int16_t board_temp_deg_c;        // global variable for calibrated temperature in degrees Celsius
-int16_t left_dc_curr;            // global variable for Left DC Link current 
-int16_t right_dc_curr;           // global variable for Right DC Link current
-int16_t dc_curr;                 // global variable for Total DC Link current 
-int16_t cmdMaster;                    // global variable for Left Command 
-int16_t cmdSlave;                    // global variable for Right Command 
+extern int16_t batVoltageCalib;                 // global variable for calibrated battery voltage
+extern int16_t board_temp_deg_c_Master;         // global variable for calibrated temperature in degrees Celsius
+extern int16_t board_temp_deg_c_Slave;          // global variable for calibrated temperature in degrees Celsius
+int16_t left_dc_curr;                           // global variable for Left DC Link current 
+int16_t right_dc_curr;                          // global variable for Right DC Link current
+int16_t dc_curr;                                // global variable for Total DC Link current 
+int16_t cmdMaster;                              // global variable for Left Command 
+int16_t cmdSlave;                               // global variable for Right Command 
 
 //------------------------------------------------------------------------
 // Local variables
@@ -134,26 +135,28 @@ int16_t cmdSlave;                    // global variable for Right Command
 #endif
 
 #ifndef VARIANT_TRANSPOTTER
-  static int16_t  speedMaster;                // local variable for steering. -1000 to 1000
-  static int16_t  speedSlave;                // local variable for speed. -1000 to 1000
-  static int16_t  speedMasterRateFixdt;       // local fixed-point variable for steering rate limiter
-  static int16_t  speedSlaveRateFixdt;       // local fixed-point variable for speed rate limiter
-  static int32_t  speedMasterFixdt;           // local fixed-point variable for steering low-pass filter
-  static int32_t  speedSlaveFixdt;           // local fixed-point variable for speed low-pass filter
+  static int16_t  speedMaster;                  // local variable for steering. -1000 to 1000
+  static int16_t  speedSlave;                   // local variable for speed. -1000 to 1000
+  static int16_t  speedMasterRateFixdt;         // local fixed-point variable for steering rate limiter
+  static int16_t  speedSlaveRateFixdt;          // local fixed-point variable for speed rate limiter
+  static int32_t  speedMasterFixdt;             // local fixed-point variable for steering low-pass filter
+  static int32_t  speedSlaveFixdt;              // local fixed-point variable for speed low-pass filter
 #endif
 
 static uint32_t    buzzerTimer_prev = 0;
 static uint32_t    inactivity_timeout_counter;
-static MultipleTap MultipleTapBrake;    // define multiple tap functionality for the Brake pedal
+static MultipleTap MultipleTapBrake;            // define multiple tap functionality for the Brake pedal
 
-static uint16_t rate = RATE; // Adjustable rate to support multiple drive modes on startup
+static uint16_t rate = RATE;                    // Adjustable rate to support multiple drive modes on startup
 
 #ifdef MULTI_MODE_DRIVE
   static uint8_t drive_mode;
   static uint16_t max_speed;
 #endif
 
-
+//------------------------------------------------------------------------
+// Main
+//------------------------------------------------------------------------
 int main(void) {
 
   HAL_Init();
@@ -180,6 +183,10 @@ int main(void) {
 
   SystemClock_Config();
 
+/* GPIO Remap */
+  __HAL_AFIO_REMAP_SWJ_NOJTAG();        // Disable = JNRST, JTDO, JTDI. Enable = PIN PB4, PB3, PA15.
+  __HAL_AFIO_REMAP_USART1_ENABLE();     // Change pinOut usart1
+  
   __HAL_RCC_DMA1_CLK_DISABLE();
 
   MX_GPIO_Init();
@@ -338,21 +345,13 @@ int main(void) {
 
 
       // ####### SET OUTPUTS (if the target change is less than +/- 100) #######
-      #ifdef INVERT_R_DIRECTION
-        pwmr = cmdR;
-      #else
-        //pwmr = -cmdR;
       #endif
-      #ifdef INVERT_L_DIRECTION
-        pwml = -cmdL;
-      #else
-      if (enableMotors){
+      #ifdef BOARD_MASTER
         pwm = cmdMaster;
-      } else {
-        pwm = 0U;
-      }
       #endif
-    #endif
+      #ifdef BOARD_SLAVE
+        pwm = -cmdSlave;
+      #endif
 
     #ifdef VARIANT_TRANSPOTTER
       distance    = CLAMP(input1[inIdx].cmd - 180, 0, 4095);
@@ -466,7 +465,12 @@ int main(void) {
     // ####### CALC BOARD TEMPERATURE #######
     filtLowPass32(adc_buffer.temp, TEMP_FILT_COEF, &board_temp_adcFixdt);
     board_temp_adcFilt  = (int16_t)(board_temp_adcFixdt >> 16);  // convert fixed-point to integer
-    board_temp_deg_c    = (TEMP_CAL_HIGH_DEG_C - TEMP_CAL_LOW_DEG_C) * (board_temp_adcFilt - TEMP_CAL_LOW_ADC) / (TEMP_CAL_HIGH_ADC - TEMP_CAL_LOW_ADC) + TEMP_CAL_LOW_DEG_C;
+    #ifdef BOARD_MASTER
+    board_temp_deg_c_Master     = (TEMP_CAL_HIGH_DEG_C - TEMP_CAL_LOW_DEG_C) * (board_temp_adcFilt - TEMP_CAL_LOW_ADC) / (TEMP_CAL_HIGH_ADC - TEMP_CAL_LOW_ADC) + TEMP_CAL_LOW_DEG_C;
+    #endif
+    #ifdef BOARD_SLAVE
+    board_temp_deg_c_Slave      = (TEMP_CAL_HIGH_DEG_C - TEMP_CAL_LOW_DEG_C) * (board_temp_adcFilt - TEMP_CAL_LOW_ADC) / (TEMP_CAL_HIGH_ADC - TEMP_CAL_LOW_ADC) + TEMP_CAL_LOW_DEG_C;
+    #endif
 
     // ####### CALC CALIBRATED BATTERY VOLTAGE #######
     #ifdef BOARD_MASTER
@@ -518,7 +522,7 @@ int main(void) {
     poweroffPressCheck();
 
     // ####### BEEP AND EMERGENCY POWEROFF #######
-    if (TEMP_POWEROFF_ENABLE && board_temp_deg_c >= TEMP_POWEROFF && speedAvgAbs < 20){  // poweroff before mainboard burns OR low bat 3
+    if (TEMP_POWEROFF_ENABLE && board_temp_deg_c_Master && board_temp_deg_c_Slave  >= TEMP_POWEROFF && speedAvgAbs < 20){  // poweroff before mainboard burns OR low bat 3
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Powering off, temperature is too high\r\n");
       #endif
@@ -537,7 +541,7 @@ int main(void) {
       beepCount(3, 24, 1);
     } else if (timeoutFlgGen) {                                                                       // 4 beeps (low pitch): General timeout (PPM, PWM, Nunchuk)
       beepCount(4, 24, 1);
-    } else if (TEMP_WARNING_ENABLE && board_temp_deg_c >= TEMP_WARNING) {                             // 5 beeps (low pitch): Mainboard temperature warning
+    } else if (TEMP_WARNING_ENABLE && board_temp_deg_c_Master && board_temp_deg_c_Slave >= TEMP_WARNING) {                             // 5 beeps (low pitch): Mainboard temperature warning
       beepCount(5, 24, 1);
     } else if (BAT_LVL1_ENABLE && batVoltage < BAT_LVL1) {                                            // 1 beep fast (medium pitch): Low bat 1
       beepCount(0, 10, 6);
