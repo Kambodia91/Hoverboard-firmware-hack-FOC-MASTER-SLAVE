@@ -7,6 +7,7 @@ The software is being tested.! More info: https://github.com/EFeru/hoverboard-fi
 
 ---
 YOUTUBE:
+- [Test communication usart1 with esp32, blynkAPP](https://youtu.be/ViJhMbIGTzU).
 - [Test safety communication](https://youtu.be/5jPmf3Z_Q6c).
 ---
 
