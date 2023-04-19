@@ -5,6 +5,10 @@ This repository implements Field Oriented Control (FOC) for hoverboards witch tw
 
 The software is being tested.! More info: https://github.com/EFeru/hoverboard-firmware-hack-FOC/issues/364
 
+---
+YOUTUBE:
+- ![Test safety communication](https://youtu.be/5jPmf3Z_Q6c).
+---
 
 Compared to the commutation method, this new FOC control method offers superior performance featuring:
  - reduced noise and vibrations 	
