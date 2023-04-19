@@ -7,7 +7,7 @@ The software is being tested.! More info: https://github.com/EFeru/hoverboard-fi
 
 ---
 YOUTUBE:
-- ![Test safety communication](https://youtu.be/5jPmf3Z_Q6c).
+- [Test safety communication](https://youtu.be/5jPmf3Z_Q6c).
 ---
 
 Compared to the commutation method, this new FOC control method offers superior performance featuring:
