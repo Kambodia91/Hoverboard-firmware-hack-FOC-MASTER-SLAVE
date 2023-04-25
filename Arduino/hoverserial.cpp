@@ -56,7 +56,11 @@ typedef struct{
    int16_t  speedR_meas;
    int16_t  speedL_meas;
    int16_t  batVoltage;
-   int16_t  boardTemp;
+   int16_t  boardTempMaster;
+   int16_t  boardTempSlave;
+   int16_t  enableFinMaster;
+   int16_t  enableFinSlave;
+   int16_t  chargeStatus;
    uint16_t cmdLed;
    uint16_t checksum;
 } SerialFeedback;
@@ -119,8 +123,18 @@ void Receive()
     // Check if we reached the end of the package
     if (idx == sizeof(SerialFeedback)) {
         uint16_t checksum;
-        checksum = (uint16_t)(NewFeedback.start ^ NewFeedback.cmd1 ^ NewFeedback.cmd2 ^ NewFeedback.speedR_meas ^ NewFeedback.speedL_meas
-                            ^ NewFeedback.batVoltage ^ NewFeedback.boardTemp ^ NewFeedback.cmdLed);
+        checksum = (uint16_t)(NewFeedback.start ^ 
+                              NewFeedback.cmd1 ^ 
+                              NewFeedback.cmd2 ^ 
+                              NewFeedback.speedR_meas ^ 
+                              NewFeedback.speedL_meas ^ 
+                              NewFeedback.batVoltage ^ 
+                              NewFeedback.boardTempMaster ^ 
+                              NewFeedback.boardTempSlave ^ 
+                              NewFeedback.enableFinMaster ^ 
+                              NewFeedback.enableFinSlave ^ 
+                              NewFeedback.chargeStatus ^ 
+                              NewFeedback.cmdLed);
 
         // Check validity of the new data
         if (NewFeedback.start == START_FRAME && checksum == NewFeedback.checksum) {
@@ -133,8 +147,12 @@ void Receive()
             Serial.print(" 3: ");  Serial.print(Feedback.speedR_meas);
             Serial.print(" 4: ");  Serial.print(Feedback.speedL_meas);
             Serial.print(" 5: ");  Serial.print(Feedback.batVoltage);
-            Serial.print(" 6: ");  Serial.print(Feedback.boardTemp);
-            Serial.print(" 7: ");  Serial.println(Feedback.cmdLed);
+            Serial.print(" 6: ");  Serial.print(Feedback.boardTempMaster);
+            Serial.print(" 7: ");  Serial.print(Feedback.boardTempSlave);
+            Serial.print(" 8: ");  Serial.print(Feedback.enableFinMaster);
+            Serial.print(" 9: ");  Serial.print(Feedback.enableFinSlave);
+            Serial.print(" 10: ");  Serial.print(Feedback.chargeStatus);
+            Serial.print(" 11: ");  Serial.println(Feedback.cmdLed);
         } else {
           Serial.println("Non-valid data skipped");
         }
@@ -175,3 +193,38 @@ void loop(void)
 }
 
 // ########################## END ##########################
+
+/*
+
+||                        COMMUNICATION UART                                ||
+|| UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
+|| BOARD     |  Command:          || BOARD    |  Command:          || BOARD ||
+|| ARDUINO   => StartFrame        => MASTER   => StartFrame        => SLAVE ||
+|| ARDUINO   => EnableMotors      => MASTER   => enableMotors      => SLAVE ||
+|| ARDUINO   => SpeedMaster       => MASTER   => speedMaster       => SLAVE ||
+|| ARDUINO   => SpeedSlave        => MASTER   => speedSlave        => SLAVE ||
+||                                   MASTER   => speedSlave_meas   => SLAVE ||
+||                                   MASTER   => bateryVoltage     => SLAVE ||
+||                                   MASTER   => boardTemp         => SLAVE ||
+||                                   MASTER   => enableFin         => SLAVE ||
+||                                   MASTER   => errCode           => SLAVE ||
+||                                   MASTER   => ChargeStatus      => SLAVE ||
+|| ARDUINO   => checksum          => MASTER   => checksum          => SLAVE ||
+
+|| UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
+|| BOARD     | Command:           || BOARD    |   Command:         || BOARD ||
+|| ARDUINO  <= StartFrame        <=  MASTER    <= StartFrame       <= SLAVE ||
+|| ARDUINO  <= cmd1              <=  MASTER    <= speedMaster      <= SLAVE ||
+|| ARDUINO  <= cmd2              <=  MASTER    <= speedSlave       <= SLAVE ||
+|| ARDUINO  <= speedR_meas       <=  MASTER                                 ||  
+|| ARDUINO  <= speedL_meas       <=  MASTER    <= speedSlave_meas  <= SLAVE ||
+|| ARDUINO  <= batVoltage        <=  MASTER    <= bateryVoltage    <= SLAVE ||
+|| ARDUINO  <= boardTempMaster   <=  MASTER                                 ||
+|| ARDUINO  <= boardTempSlave    <=  MASTER    <= boardTemp        <= SLAVE ||
+|| ARDUINO  <= enableFinMaster   <=  MASTER                                 ||
+|| ARDUINO  <= enableFinSlave    <=  MASTER    <= enableFin        <= Slave ||
+||                                   MASTER    <= errCode          <= SLAVE ||
+|| ARDUINO  <= chargeStatus      <=  MASTER    <= ChargeStatus     <= SLAVE ||
+|| ARDUINO  <= cmdLed            <=  MASTER                                 ||
+|| ARDUINO  <= checksum          <=  MASTER    <= checksum         <= SLAVE ||
+       
