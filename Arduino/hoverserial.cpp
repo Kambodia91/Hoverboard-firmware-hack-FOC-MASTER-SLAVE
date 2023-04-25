@@ -193,38 +193,3 @@ void loop(void)
 }
 
 // ########################## END ##########################
-
-/*
-
-||                        COMMUNICATION UART                                ||
-|| UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
-|| BOARD     |  Command:          || BOARD    |  Command:          || BOARD ||
-|| ARDUINO   => StartFrame        => MASTER   => StartFrame        => SLAVE ||
-|| ARDUINO   => EnableMotors      => MASTER   => enableMotors      => SLAVE ||
-|| ARDUINO   => SpeedMaster       => MASTER   => speedMaster       => SLAVE ||
-|| ARDUINO   => SpeedSlave        => MASTER   => speedSlave        => SLAVE ||
-||                                   MASTER   => speedSlave_meas   => SLAVE ||
-||                                   MASTER   => bateryVoltage     => SLAVE ||
-||                                   MASTER   => boardTemp         => SLAVE ||
-||                                   MASTER   => enableFin         => SLAVE ||
-||                                   MASTER   => errCode           => SLAVE ||
-||                                   MASTER   => ChargeStatus      => SLAVE ||
-|| ARDUINO   => checksum          => MASTER   => checksum          => SLAVE ||
-
-|| UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
-|| BOARD     | Command:           || BOARD    |   Command:         || BOARD ||
-|| ARDUINO  <= StartFrame        <=  MASTER    <= StartFrame       <= SLAVE ||
-|| ARDUINO  <= cmd1              <=  MASTER    <= speedMaster      <= SLAVE ||
-|| ARDUINO  <= cmd2              <=  MASTER    <= speedSlave       <= SLAVE ||
-|| ARDUINO  <= speedR_meas       <=  MASTER                                 ||  
-|| ARDUINO  <= speedL_meas       <=  MASTER    <= speedSlave_meas  <= SLAVE ||
-|| ARDUINO  <= batVoltage        <=  MASTER    <= bateryVoltage    <= SLAVE ||
-|| ARDUINO  <= boardTempMaster   <=  MASTER                                 ||
-|| ARDUINO  <= boardTempSlave    <=  MASTER    <= boardTemp        <= SLAVE ||
-|| ARDUINO  <= enableFinMaster   <=  MASTER                                 ||
-|| ARDUINO  <= enableFinSlave    <=  MASTER    <= enableFin        <= Slave ||
-||                                   MASTER    <= errCode          <= SLAVE ||
-|| ARDUINO  <= chargeStatus      <=  MASTER    <= ChargeStatus     <= SLAVE ||
-|| ARDUINO  <= cmdLed            <=  MASTER                                 ||
-|| ARDUINO  <= checksum          <=  MASTER    <= checksum         <= SLAVE ||
-       
