@@ -63,6 +63,9 @@
       int16_t   speedSlave_meas;// Slave    => Master         => Arduino
       int16_t   bateryVoltage;  // Master   => Slave/Arduino
       int16_t   boardTemp;      // Master  <=> Slave          => Arduino
+      int16_t   errCode;        // Master  <=> Slawe
+      int16_t   enableFin;      // Master  <=> Slawe
+      int16_t   chargeStatus;   // Master  <=> Slawe
       uint16_t  checksum;       // 
     } SerialUart2;
   #endif

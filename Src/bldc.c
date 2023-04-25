@@ -65,9 +65,15 @@ volatile uint32_t buzzerTimer = 0;
 static uint8_t  buzzerPrev  = 0;
 static uint8_t  buzzerIdx   = 0;
 
-uint8_t        enable       = 0;        // initially motors are disabled for SAFETY
-uint16_t       enableMotors = 0;        // message from uart1
-static uint8_t enableFin    = 0;
+int16_t errCode_Master;
+int16_t errCode_Slave;
+
+uint8_t         enable            = 0;        // initially motors are disabled for SAFETY
+uint16_t        enableMotors      = 0;        // message from uart1
+uint16_t        enableFinMaster   = 0;
+uint16_t        enableFinSlave    = 0;
+int16_t         chargeStatus;            // Status connection charge.
+static uint8_t  enableFin         = 0;
 
 static const uint16_t pwm_res  = 64000000 / 2 / PWM_FREQ; // = 2000
 
@@ -120,13 +126,13 @@ void DMA1_Channel1_IRQHandler(void) {
 
   // Disable PWM when current limit is reached (current chopping)
   // This is the Level 2 of current protection. The Level 1 should kick in first given by I_MOT_MAX
-  if(ABS(curL_DC) > curDC_max || enable == 0 || enableMotors == 0) {
+  if(ABS(curL_DC) > curDC_max || enable == 0 || enableMotors == 0 || chargeStatus == 1) {
     LEFT_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
     LEFT_TIM->BDTR |= TIM_BDTR_MOE;
   }
 
-  if(ABS(curR_DC)  > curDC_max || enable == 0 || enableMotors == 0) {
+  if(ABS(curR_DC)  > curDC_max || enable == 0 || enableMotors == 0 || chargeStatus == 1) {
     RIGHT_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
     RIGHT_TIM->BDTR |= TIM_BDTR_MOE;
@@ -173,8 +179,15 @@ void DMA1_Channel1_IRQHandler(void) {
   OverrunFlag = true;
 
   /* Make sure to stop BOTH motors in case of an error */
-  enableFin = enable && !rtY_Left.z_errCode && !rtY_Right.z_errCode && enableMotors;
- 
+  enableFin = enable && !rtY_Left.z_errCode && !errCode_Slave && !errCode_Master && enableMotors;
+    #ifdef BOARD_MASTER
+    enableFinMaster = enableFin;
+    #endif
+    #ifdef BOARD_SLAVE
+    enableFinSlave = enableFin;
+    #endif
+
+
   // ========================= LEFT MOTOR ============================ 
     // Get hall sensors values
     uint8_t hall_ul = 0;// !(LEFT_HALL_U_PORT->IDR & LEFT_HALL_U_PIN); // Unnecessary
@@ -240,7 +253,14 @@ void DMA1_Channel1_IRQHandler(void) {
     ur            = rtY_Right.DC_phaA;
     vr            = rtY_Right.DC_phaB;
     wr            = rtY_Right.DC_phaC;
- // errCodeRight  = rtY_Right.z_errCode;
+    
+    #ifdef BOARD_MASTER
+    errCode_Master = rtY_Right.z_errCode;
+    #endif
+    #ifdef BOARD_SLAVE
+    errCode_Slave = rtY_Right.z_errCode;
+    #endif
+ 
  // motSpeedRight = rtY_Right.n_mot;
  // motAngleRight = rtY_Right.a_elecAngle;
 

@@ -111,10 +111,13 @@ uint8_t  timeoutFlgSerial = 0;          // Timeout Flag for Rx Serial command: 0
 int16_t batVoltageCalib;                // V-bat from Master.
 int16_t board_temp_deg_c_Master = 0;    // global variable for calibrated temperature in degrees Celsius
 int16_t board_temp_deg_c_Slave = 0;     // global variable for calibrated temperature in degrees Celsius
-
+int16_t errCode_Master = 0;
+int16_t errCode_Slave = 0;
 int16_t speedSlave_meas;                // SpeedL_meas from Slave.
 int16_t enableMotors;                   // Command enable motors from uart1
-
+int16_t enableFinMaster;
+int16_t enableFinSlave;
+int16_t chargeStatus;                   // Status charge connection.
 
 uint8_t  ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t  ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
@@ -163,6 +166,9 @@ typedef struct{
   int16_t   batVoltage;
   int16_t   boardTempMaster;
   int16_t   boardTempSlave;
+  int16_t   enableFinMaster;
+  int16_t   enableFinSlave;
+  int16_t   chargeStatus;
   uint16_t  cmdLed;
   uint16_t  checksum;
 } SerialFeedback;
@@ -179,6 +185,9 @@ typedef struct{
   int16_t   speedSlave_meas;// Slave
   int16_t   bateryVoltage;  // Slave
   int16_t   boardTemp;      // Master/Slave
+  int16_t   errCode;        // Slawe to Master
+  int16_t   enableFin;      // Slave to Master
+  int16_t   chargeStatus;   // Master to Slave
   uint16_t  checksum;       // Master/Slave
 } SerialSend_Usart2;
 static SerialSend_Usart2 Send_Usart2;
@@ -920,11 +929,15 @@ void readInputRaw(void) {
         input2[inIdx].raw         = commandL.speedSlave;              // BOARD SLAVE    <= Message speedSlave         <= BOARD MASTER.              
         batVoltageCalib           = commandL.bateryVoltage;           // BOARD SLAVE    <= Message bateryVoltage      <= BOARD MASTER.
         board_temp_deg_c_Master   = commandL.boardTemp;               // BOARD SLAVE    <= Message boardTemp          <= BOARD MASTER.
+        errCode_Master            = commandL.errCode;                 // BOARD SLAVE    <= Message errCode            <= BOARD MASTER.
+        chargeStatus              = commandL.chargeStatus;            // BOARD SLAVE    <= Message chargeStatus       <= BOARD MASTER.
         #endif
         // Message Slave => Master
         #ifdef BOARD_MASTER                                           // RX UART2
         speedSlave_meas           = commandL.speedSlave_meas;         // BOARD MASTER   <= Message speedSlave_meae    <= BOARD SLAVE.
         board_temp_deg_c_Slave    = commandL.boardTemp;               // BOARD MASTER   <= Message boardTemp          <= BOARD SLAVE.
+        errCode_Slave             = commandL.errCode;                 // BOARD MASTER   <= Message errCode            <= BOARD SLAVE.
+        enableFinSlave            = commandL.enableFin;
         #endif
       #endif
     }
@@ -1164,13 +1177,13 @@ void usart2_rx_check(void)
   uint8_t ptr_debug[SERIAL_BUFFER_SIZE];
   if (pos != old_pos) {                                                 // Check change in received data
     if (pos > old_pos) {                                                // "Linear" buffer mode: check if current position is over previous one
-      usart2_process_debug(&rx_buffer_L[old_pos], pos - old_pos);        // Process data
+      usart_process_debug(&rx_buffer_L[old_pos], pos - old_pos);        // Process data
     } else {                                                            // "Overflow" buffer mode
       memcpy(&ptr_debug[0], &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         memcpy(&ptr_debug[rx_buffer_L_len - old_pos], &rx_buffer_L[0], pos);                              // Copy remaining data
       }
-      usart2_process_debug(ptr_debug, rx_buffer_L_len - old_pos + pos);        // Process data
+      usart_process_debug(ptr_debug, rx_buffer_L_len - old_pos + pos);        // Process data
     }
   }
   #endif // DEBUG_SERIAL_USART2
@@ -1237,13 +1250,13 @@ void usart1_rx_check(void)
 
   if (pos != old_pos) {                                                 // Check change in received data
     if (pos > old_pos) {                                                // "Linear" buffer mode: check if current position is over previous one
-      usart1_process_debug(&rx_buffer_R[old_pos], pos - old_pos);        // Process data
+      usart_process_debug(&rx_buffer_R[old_pos], pos - old_pos);        // Process data
     } else {                                                            // "Overflow" buffer mode
       memcpy(&ptr_debug[0], &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         memcpy(&ptr_debug[rx_buffer_R_len - old_pos], &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart1_process_debug(ptr_debug, rx_buffer_R_len - old_pos + pos);        // Process data
+      usart_process_debug(ptr_debug, rx_buffer_R_len - old_pos + pos);        // Process data
     }
   }
   #endif // DEBUG_SERIAL_USART1
@@ -1388,8 +1401,11 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
                           command_in->speedMaster ^ 
                           command_in->speedSlave ^ 
                           command_in->speedSlave_meas ^ 
-                          command_in->bateryVoltage ^ 
-                          command_in->boardTemp);
+                          command_in->bateryVoltage ^
+                          command_in->boardTemp ^   
+                          command_in->errCode ^
+                          command_in->enableFin ^
+                          command_in->chargeStatus);
                           
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
@@ -1435,14 +1451,16 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
 void usart1_tx_Send(void) 
 { //USART1 MASTER => ARDUINO//
   Feedback.start	          = (uint16_t)SERIAL_START_FRAME;
-  Feedback.cmd1             = (int16_t)input1[inIdx].cmd;               // MASTER   => cmd1              => ARDUINO.
-  Feedback.cmd2             = (int16_t)input2[inIdx].cmd;               // MASTER   => cmd2              => ARDUINO.
-  Feedback.speedR_meas	    = (int16_t)rtY_Right.n_mot;                 // MASTER   => speedR_meas       => ARDUINO.
-  Feedback.speedL_meas	    = (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas   => MASTER   => speedL_meas       => ARDUINO.
-  Feedback.batVoltage	      = (int16_t)batVoltageCalib;                 // MASTER   => enableMotors      => ARDUINO.
-  Feedback.boardTempMaster  = (int16_t)board_temp_deg_c_Master;         // MASTER   => enableMotors      => ARDUINO.
-  Feedback.boardTempSlave	  = (int16_t)board_temp_deg_c_Slave;          // MASTER   => enableMotors      => ARDUINO.
-
+  Feedback.cmd1             = (int16_t)input1[inIdx].cmd;               // MASTER   => cmd1                    => ARDUINO.
+  Feedback.cmd2             = (int16_t)input2[inIdx].cmd;               // MASTER   => cmd2                    => ARDUINO.
+  Feedback.speedR_meas	    = (int16_t)rtY_Right.n_mot;                 // MASTER   => speedR_meas             => ARDUINO.
+  Feedback.speedL_meas	    = (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas         => MASTER   => speedL_meas       => ARDUINO.
+  Feedback.batVoltage	      = (int16_t)batVoltageCalib;                 // MASTER   => batVoltageCalib         => ARDUINO.
+  Feedback.boardTempMaster  = (int16_t)board_temp_deg_c_Master;         // MASTER   => board_temp_deg_c_Master => ARDUINO.
+  Feedback.boardTempSlave	  = (int16_t)board_temp_deg_c_Slave;          // MASTER   => board_temp_deg_c_Slave  => ARDUINO.
+  Feedback.enableFinMaster	= (int16_t)enableFinMaster;                 // MASTER   => enableFinMaster         => ARDUINO.
+  Feedback.enableFinSlave	  = (int16_t)enableFinSlave;                  // MASTER   => enableFinSlave          => ARDUINO.
+  Feedback.chargeStatus     = (int16_t)chargeStatus;                    // MASTER   => ChargeStatus            => ARDUINO.
         
   if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
     Feedback.cmdLed     = (uint16_t)sideboard_leds_R;
@@ -1454,6 +1472,9 @@ void usart1_tx_Send(void)
                                       Feedback.batVoltage ^ 
                                       Feedback.boardTempMaster ^ 
                                       Feedback.boardTempSlave ^ 
+                                      Feedback.enableFinMaster ^
+                                      Feedback.enableFinSlave ^
+                                      Feedback.chargeStatus ^
                                       Feedback.cmdLed);
     // TR USART1
     HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&Feedback, sizeof(Feedback));
@@ -1469,9 +1490,12 @@ void usart2_tx_Send(void)
     Send_Usart2.enableMotors      = (int16_t)enableMotors;              // MASTER   => enableMotors      => SLAVE.
     Send_Usart2.speedMaster       = (int16_t)0U;                        // MASTER   => speedMaster       => SLAVE.
     Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
-    Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas   => SLAVE.
+    Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas  <=> SLAVE.
     Send_Usart2.bateryVoltage	    = (int16_t)batVoltageCalib;           // MASTER   => bateryVoltage     => SLAVE.
-    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Master;   // MASTER   => bateryVoltage     => SLAVE.
+    Send_Usart2.errCode           = (int16_t)rtY_Right.z_errCode;       // MASTER   => errCode          <=> SLAVE.
+    Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
+    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Master;   // MASTER   => boardTemp        <=> SLAVE.
+    Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
   #endif
   //USART2 SLAVE => MASTER//
   #ifdef BOARD_SLAVE
@@ -1481,7 +1505,10 @@ void usart2_tx_Send(void)
     Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
     Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Right.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
     Send_Usart2.bateryVoltage	    = (int16_t)0U;                        // SLAVE    => bateryVoltage     => MASTER.
-    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Slave;    // SLAVE    => bateryVoltage     => MASTER.
+    Send_Usart2.errCode           = (int16_t)rtY_Right.z_errCode;       // SLAVE    => errCode           => MASTER.
+    Send_Usart2.enableFin         = (int16_t)enableFinSlave;            // MASTER   => enableFinSlave   <=> SLAVE.
+    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Slave;    // SLAVE    => boardTemp         => MASTER.
+    Send_Usart2.chargeStatus      = (int16_t)0U;                        // SLAVE    => ChargeStatus      => MASTER.
   #endif
         
   if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
@@ -1490,8 +1517,11 @@ void usart2_tx_Send(void)
                                         Send_Usart2.speedMaster ^ 
                                         Send_Usart2.speedSlave ^ 
                                         Send_Usart2.speedSlave_meas ^ 
-                                        Send_Usart2.bateryVoltage ^ 
-                                        Send_Usart2.boardTemp);
+                                        Send_Usart2.bateryVoltage ^
+                                        Send_Usart2.errCode ^ 
+                                        Send_Usart2.boardTemp ^
+                                        Send_Usart2.enableFin ^
+                                        Send_Usart2.chargeStatus);
     // TR USART2
     HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&Send_Usart2, sizeof(Send_Usart2));
   }
@@ -1736,8 +1766,10 @@ void poweroff(void) {
 
 void chargeCheck(void) {
   if(HAL_GPIO_ReadPin(CHARGER_PORT, CHARGER_PIN)) {
+    chargeStatus = 0;
     HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET);
   } else {
+    chargeStatus = 1;
     HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET);
   }
 }

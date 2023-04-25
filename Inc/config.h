@@ -61,8 +61,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-// #define BOARD_MASTER                      // board master 
-#define BOARD_SLAVE                       // board slave
+#define BOARD_MASTER                      // board master 
+// #define BOARD_SLAVE                       // board slave
 
 // ######################## END OF BOARD VARIANT ###############################
 
@@ -165,7 +165,7 @@
 
 // Extra functionality
 // #define STANDSTILL_HOLD_ENABLE          // [-] Flag to hold the position when standtill is reached. Only available and makes sense for VOLTAGE or TORQUE mode.
-// #define ELECTRIC_BRAKE_ENABLE           // [-] Flag to enable electric brake and replace the motor "freewheel" with a constant braking when the input torque request is 0. Only available and makes sense for TORQUE mode.
+// #define ELECTRIC_BRAKE_ENABLE           // [-] Flag to enable electric brake and replace the motor "freewheel" with a constant braking when the input torque request is 0. Only available and makes sense for TORQUE mode.//
 // #define ELECTRIC_BRAKE_MAX    100       // (0, 500) Maximum electric brake to be applied when input torque request is 0 (pedal fully released).
 // #define ELECTRIC_BRAKE_THRES  120       // (0, 500) Threshold below at which the electric brake starts engaging.
 // ########################### END OF MOTOR CONTROL ########################
@@ -312,7 +312,7 @@
 // ############################ VARIANT_USART SETTINGS ############################
 #ifdef VARIANT_USART
  
-  //#define DEBUG_SERIAL_USART1           // 
+  // #define DEBUG_SERIAL_USART1           // 
  
   #ifdef BOARD_MASTER
   #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER

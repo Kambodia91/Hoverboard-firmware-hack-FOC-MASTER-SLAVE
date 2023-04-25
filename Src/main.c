@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h> // for abs()
+#include <string.h>
 #include "stm32f1xx_hal.h"
 #include "defines.h"
 #include "setup.h"
@@ -85,7 +86,9 @@ extern uint8_t enable;                          // global variable for motor ena
 
 extern int16_t speedSlave_meas;                 // global variable for motor Slave speed    
 extern int16_t enableMotors;                    // Command from uart1
-
+extern int16_t enableFinMaster;
+extern int16_t enableFinSlave;
+extern int16_t chargeStatus;                    // Status connection charge.
 extern int16_t batVoltage;                      // global variable for battery voltage
 
 #if defined(SIDEBOARD_SERIAL_USART2)
@@ -112,6 +115,8 @@ volatile uint32_t main_loop_counter;
 extern int16_t batVoltageCalib;                 // global variable for calibrated battery voltage
 extern int16_t board_temp_deg_c_Master;         // global variable for calibrated temperature in degrees Celsius
 extern int16_t board_temp_deg_c_Slave;          // global variable for calibrated temperature in degrees Celsius
+extern int16_t errCode_Master;
+extern int16_t errCode_Slave;
 int16_t left_dc_curr;                           // global variable for Left DC Link current 
 int16_t right_dc_curr;                          // global variable for Right DC Link current
 int16_t dc_curr;                                // global variable for Total DC Link current 
@@ -249,7 +254,7 @@ int main(void) {
 
     #ifndef VARIANT_TRANSPOTTER
       // ####### MOTOR ENABLING: Only if the initial input is very small (for SAFETY) #######
-      if (enable == 0 && !rtY_Left.z_errCode && !rtY_Right.z_errCode && 
+      if (enable == 0 && !errCode_Slave && !errCode_Master && 
           ABS(input1[inIdx].cmd) < 50 && ABS(input2[inIdx].cmd) < 50){
         beepShort(6);                     // make 2 beeps indicating the motor enable
         beepShort(4); HAL_Delay(100);
@@ -488,15 +493,18 @@ int main(void) {
         #if defined(DEBUG_SERIAL_PROTOCOL)
           process_debug();
         #else
-          printf("in1:%i in2:%i cmdL:%i cmdR:%i BatADC:%i BatV:%i TempADC:%i Temp:%i \r\n",
+          printf("in1:%i in2:%i cmdMaster:%i cmdSlave:%i BatADC:%i BatV:%i TempADC:%i TempMaster:%i TempSlave:%i Charging:%i \r\n",
             input1[inIdx].raw,        // 1: INPUT1
             input2[inIdx].raw,        // 2: INPUT2
-            cmdL,                     // 3: output command: [-1000, 1000]
-            cmdR,                     // 4: output command: [-1000, 1000]
+            cmdMaster,                // 3: output command: [-1000, 1000]
+            cmdSlave,                 // 4: output command: [-1000, 1000]
             adc_buffer.batt1,         // 5: for battery voltage calibration
             batVoltageCalib,          // 6: for verifying battery voltage calibration
             board_temp_adcFilt,       // 7: for board temperature calibration
-            board_temp_deg_c);        // 8: for verifying board temperature calibration
+            board_temp_deg_c_Master,  // 8: for verifying board Master temperature calibration
+            board_temp_deg_c_Slave,   // 9: for verifying board Slave temperature calibration
+            chargeStatus
+            );        
         #endif
       }
     #endif
@@ -516,8 +524,9 @@ int main(void) {
     #endif
 
     // ####### CHARGE PORT CHECK #######
+    #ifdef BOARD_MASTER
     chargeCheck();
-
+    #endif
     // ####### POWEROFF BY POWER-BUTTON #######
     poweroffPressCheck();
 
@@ -532,7 +541,7 @@ int main(void) {
         printf("Powering off, battery voltage is too low\r\n");
       #endif
       poweroff();
-    } else if (rtY_Left.z_errCode || rtY_Right.z_errCode) {                                           // 1 beep (low pitch): Motor error, disable motors
+    } else if (errCode_Slave || errCode_Master) {                                           // 1 beep (low pitch): Motor error, disable motors
       enable = 0;
       beepCount(1, 24, 1);
     } else if (timeoutFlgADC) {                                                                       // 2 beeps (low pitch): ADC timeout
