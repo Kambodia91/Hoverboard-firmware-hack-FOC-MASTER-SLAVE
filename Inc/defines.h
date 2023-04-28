@@ -26,67 +26,67 @@
 #include "stm32f1xx_hal.h"
 #include "config.h"
 
-#define RIGHT_HALL_U_PIN    GPIO_PIN_0                      // Hall Sensor A
-#define RIGHT_HALL_V_PIN    GPIO_PIN_6                      // Hall Sensor B
-#define RIGHT_HALL_W_PIN    GPIO_PIN_7                      // Hall Sensor C
+#define MOTOR_HALL_U_PIN    GPIO_PIN_0                      // Hall Sensor A
+#define MOTOR_HALL_V_PIN    GPIO_PIN_6                      // Hall Sensor B
+#define MOTOR_HALL_W_PIN    GPIO_PIN_7                      // Hall Sensor C
 
-#define RIGHT_HALL_U_PORT   GPIOB
-#define RIGHT_HALL_V_PORT   GPIOA
-#define RIGHT_HALL_W_PORT   GPIOA
+#define MOTOR_HALL_U_PORT   GPIOB
+#define MOTOR_HALL_V_PORT   GPIOA
+#define MOTOR_HALL_W_PORT   GPIOA
 
 // TIM3
 
-#define LEFT_TIM            TIM3                            // TIM3
-#define LEFT_TIM_U          CCR1
-// #define LEFT_TIM_UH_PIN GPIO_PIN_6
-// #define LEFT_TIM_UH_PORT GPIOC
-// #define LEFT_TIM_UL_PIN GPIO_PIN_7
-// #define LEFT_TIM_UL_PORT GPIOA
-#define LEFT_TIM_V          CCR2
-// #define LEFT_TIM_VH_PIN GPIO_PIN_7
-// #define LEFT_TIM_VH_PORT GPIOC
-// #define LEFT_TIM_VL_PIN GPIO_PIN_0
-// #define LEFT_TIM_VL_PORT GPIOB
-#define LEFT_TIM_W          CCR3
-// #define LEFT_TIM_WH_PIN GPIO_PIN_8
-// #define LEFT_TIM_WH_PORT GPIOC
-// #define LEFT_TIM_WL_PIN GPIO_PIN_1
-// #define LEFT_TIM_WL_PORT GPIOB
+#define ADC_TIM            TIM3                            // TIM3
+#define ADC_TIM_U          CCR1
+// #define ADC_TIM_UH_PIN GPIO_PIN_6
+// #define ADC_TIM_UH_PORT GPIOC
+// #define ADC_TIM_UL_PIN GPIO_PIN_7
+// #define ADC_TIM_UL_PORT GPIOA
+#define ADC_TIM_V          CCR2
+// #define ADC_TIM_VH_PIN GPIO_PIN_7
+// #define ADC_TIM_VH_PORT GPIOC
+// #define ADC_TIM_VL_PIN GPIO_PIN_0
+// #define ADC_TIM_VL_PORT GPIOB
+#define ADC_TIM_W          CCR3
+// #define ADC_TIM_WH_PIN GPIO_PIN_8
+// #define ADC_TIM_WH_PORT GPIOC
+// #define ADC_TIM_WL_PIN GPIO_PIN_1
+// #define ADC_TIM_WL_PORT GPIOB
 
 // TIM1 OUTPUT
 
-#define RIGHT_TIM           TIM1                            // TIM1
-#define RIGHT_TIM_U         CCR1                            // Phase 1 (Yellow)
-#define RIGHT_TIM_UH_PIN    GPIO_PIN_8                      
-#define RIGHT_TIM_UH_PORT   GPIOA
-#define RIGHT_TIM_UL_PIN    GPIO_PIN_13
-#define RIGHT_TIM_UL_PORT   GPIOB
-#define RIGHT_TIM_V         CCR2                            // Phase 2 (Green)
-#define RIGHT_TIM_VH_PIN    GPIO_PIN_9
-#define RIGHT_TIM_VH_PORT   GPIOA
-#define RIGHT_TIM_VL_PIN    GPIO_PIN_14
-#define RIGHT_TIM_VL_PORT   GPIOB
-#define RIGHT_TIM_W         CCR3                            // Phase 3 (Blue)
-#define RIGHT_TIM_WH_PIN    GPIO_PIN_10
-#define RIGHT_TIM_WH_PORT   GPIOA
-#define RIGHT_TIM_WL_PIN    GPIO_PIN_15
-#define RIGHT_TIM_WL_PORT   GPIOB
+#define MOTOR_TIM           TIM1                            // TIM1
+#define MOTOR_TIM_U         CCR1                            // Phase 1 (Yellow)
+#define MOTOR_TIM_UH_PIN    GPIO_PIN_8                      
+#define MOTOR_TIM_UH_PORT   GPIOA
+#define MOTOR_TIM_UL_PIN    GPIO_PIN_13
+#define MOTOR_TIM_UL_PORT   GPIOB
+#define MOTOR_TIM_V         CCR2                            // Phase 2 (Green)
+#define MOTOR_TIM_VH_PIN    GPIO_PIN_9
+#define MOTOR_TIM_VH_PORT   GPIOA
+#define MOTOR_TIM_VL_PIN    GPIO_PIN_14
+#define MOTOR_TIM_VL_PORT   GPIOB
+#define MOTOR_TIM_W         CCR3                            // Phase 3 (Blue)
+#define MOTOR_TIM_WH_PIN    GPIO_PIN_10
+#define MOTOR_TIM_WH_PORT   GPIOA
+#define MOTOR_TIM_WL_PIN    GPIO_PIN_15
+#define MOTOR_TIM_WL_PORT   GPIOB
 
 // TIM1 INPUT
 
-#define RIGHT_TIM_BKIN_PIN  GPIO_PIN_12
-#define RIGHT_TIM_BKIN_PORT GPIOB
+#define MOTOR_TIM_BKIN_PIN  GPIO_PIN_12
+#define MOTOR_TIM_BKIN_PORT GPIOB
 
 // ADC INPUT
 
-#define RIGHT_DC_CUR_PIN    GPIO_PIN_5                        // DC Current 
-#define RIGHT_DC_CUR_PORT   GPIOA
-#define RIGHT_U_CUR_PIN     GPIO_PIN_0                        // Phase B Current 
-#define RIGHT_U_CUR_PORT    GPIOA
-#define RIGHT_V_CUR_PIN     GPIO_PIN_1                        // Phase C Current 
-#define RIGHT_V_CUR_PORT    GPIOA
-#define RIGHT_TEMP_PIN      GPIO_PIN_1                        // White wire from wheel
-#define RIGHT_TEMP_PORT     GPIOB
+#define MOTOR_DC_CUR_PIN    GPIO_PIN_5                        // DC Current 
+#define MOTOR_DC_CUR_PORT   GPIOA
+#define MOTOR_U_CUR_PIN     GPIO_PIN_0                        // Phase B Current 
+#define MOTOR_U_CUR_PORT    GPIOA
+#define MOTOR_V_CUR_PIN     GPIO_PIN_1                        // Phase C Current 
+#define MOTOR_V_CUR_PORT    GPIOA
+#define MOTOR_TEMP_PIN      GPIO_PIN_1                        // White wire from wheel
+#define MOTOR_TEMP_PORT     GPIOB
 #define DCLINK_PIN          GPIO_PIN_4                        // V Bat
 #define DCLINK_PORT         GPIOA
 
@@ -166,12 +166,12 @@
 
 
 typedef struct {
-  uint16_t dcr; // ADC1
-  uint16_t batt1;  // ADC2
-  uint16_t rrB; // ADC1
-  uint16_t rrC; // ADC2
+  uint16_t curDc; // ADC1
+  uint16_t batt;  // ADC2
+  uint16_t curB; // ADC1
+  uint16_t curC; // ADC2
   uint16_t temp; // ADC1
-  uint16_t temp1; // ADC2
+  uint16_t AdcIn; // ADC2
 } adc_buf_t;
 
 typedef enum {

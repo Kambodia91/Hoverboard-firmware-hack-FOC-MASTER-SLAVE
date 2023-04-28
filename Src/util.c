@@ -75,20 +75,13 @@ extern volatile uint16_t pwm_captured_ch2_value;
 //------------------------------------------------------------------------
 // Matlab defines - from auto-code generation
 //---------------
-RT_MODEL rtM_Left_;                     /* Real-time model */
-RT_MODEL rtM_Right_;                    /* Real-time model */
-RT_MODEL *const rtM_Left  = &rtM_Left_;
-RT_MODEL *const rtM_Right = &rtM_Right_;
+RT_MODEL rtM_Motor_;                    /* Real-time model */
+RT_MODEL *const rtM_Motor = &rtM_Motor_;
 
-extern P rtP_Left;                      /* Block parameters (auto storage) */
-DW       rtDW_Left;                     /* Observable states */
-ExtU     rtU_Left;                      /* External inputs */
-ExtY     rtY_Left;                      /* External outputs */
-
-P        rtP_Right;                     /* Block parameters (auto storage) */
-DW       rtDW_Right;                    /* Observable states */
-ExtU     rtU_Right;                     /* External inputs */
-ExtY     rtY_Right;                     /* External outputs */
+extern P rtP_Motor;                      /* Block parameters (auto storage) */
+DW       rtDW_Motor;                    /* Observable states */
+ExtU     rtU_Motor;                     /* External inputs */
+ExtY     rtY_Motor;                     /* External outputs */
 //---------------
 
 uint8_t power = 0;
@@ -109,14 +102,19 @@ uint8_t  timeoutFlgADC    = 0;          // Timeout Flag for ADC Protection:    0
 uint8_t  timeoutFlgSerial = 0;          // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 
 int16_t batVoltageCalib;                // V-bat from Master.
+
 int16_t board_temp_deg_c_Master = 0;    // global variable for calibrated temperature in degrees Celsius
 int16_t board_temp_deg_c_Slave = 0;     // global variable for calibrated temperature in degrees Celsius
+
 int16_t errCode_Master = 0;
 int16_t errCode_Slave = 0;
+
 int16_t speedSlave_meas;                // SpeedL_meas from Slave.
+
 int16_t enableMotors;                   // Command enable motors from uart1
 int16_t enableFinMaster;
 int16_t enableFinSlave;
+
 int16_t chargeStatus;                   // Status charge connection.
 
 uint8_t  ctrlModReqRaw = CTRL_MOD_REQ;
@@ -161,8 +159,8 @@ typedef struct{
   uint16_t  start;
   int16_t   cmd1;
   int16_t   cmd2;
-  int16_t   speedR_meas;
-  int16_t   speedL_meas;
+  int16_t   speedMaster_meas;
+  int16_t   speedSlave_meas;
   int16_t   batVoltage;
   int16_t   boardTempMaster;
   int16_t   boardTempSlave;
@@ -291,40 +289,30 @@ static uint8_t standstillAcv = 0;
 
 void BLDC_Init(void) {
   /* Set BLDC controller parameters */ 
-  rtP_Left.b_angleMeasEna       = 0;            // Motor angle input: 0 = estimated angle, 1 = measured angle (e.g. if encoder is available)
-  rtP_Left.z_selPhaCurMeasABC   = 0;            // Left motor measured current phases {Green, Blue} = {iA, iB} -> do NOT change
-  rtP_Left.z_ctrlTypSel         = CTRL_TYP_SEL;
-  rtP_Left.b_diagEna            = DIAG_ENA;
-  rtP_Left.i_max                = (I_MOT_MAX * A2BIT_CONV) << 4;        // fixdt(1,16,4)
-  rtP_Left.n_max                = N_MOT_MAX << 4;                       // fixdt(1,16,4)
-  rtP_Left.b_fieldWeakEna       = FIELD_WEAK_ENA; 
-  rtP_Left.id_fieldWeakMax      = (FIELD_WEAK_MAX * A2BIT_CONV) << 4;   // fixdt(1,16,4)
-  rtP_Left.a_phaAdvMax          = PHASE_ADV_MAX << 4;                   // fixdt(1,16,4)
-  rtP_Left.r_fieldWeakHi        = FIELD_WEAK_HI << 4;                   // fixdt(1,16,4)
-  rtP_Left.r_fieldWeakLo        = FIELD_WEAK_LO << 4;                   // fixdt(1,16,4)
+  rtP_Motor.b_angleMeasEna       = 0;            // Motor angle input: 0 = estimated angle, 1 = measured angle (e.g. if encoder is available)
+  rtP_Motor.z_selPhaCurMeasABC   = 1;            // motor measured current phases {Blue, Yellow} = {iB, iC} -> do NOT change
+  rtP_Motor.z_ctrlTypSel         = CTRL_TYP_SEL;
+  rtP_Motor.b_diagEna            = DIAG_ENA;
+  rtP_Motor.i_max                = (I_MOT_MAX * A2BIT_CONV) << 4;        // fixdt(1,16,4)
+  rtP_Motor.n_max                = N_MOT_MAX << 4;                       // fixdt(1,16,4)
+  rtP_Motor.b_fieldWeakEna       = FIELD_WEAK_ENA; 
+  rtP_Motor.id_fieldWeakMax      = (FIELD_WEAK_MAX * A2BIT_CONV) << 4;   // fixdt(1,16,4)
+  rtP_Motor.a_phaAdvMax          = PHASE_ADV_MAX << 4;                   // fixdt(1,16,4)
+  rtP_Motor.r_fieldWeakHi        = FIELD_WEAK_HI << 4;                   // fixdt(1,16,4)
+  rtP_Motor.r_fieldWeakLo        = FIELD_WEAK_LO << 4;                   // fixdt(1,16,4)
 
-  rtP_Right                     = rtP_Left;     // Copy the Left motor parameters to the Right motor parameters
-  rtP_Right.z_selPhaCurMeasABC  = 1;            // Right motor measured current phases {Blue, Yellow} = {iB, iC} -> do NOT change
+  /* Pack motor data into RTM */
+  rtM_Motor->defaultParam       = &rtP_Motor;
+  rtM_Motor->dwork              = &rtDW_Motor;
+  rtM_Motor->inputs             = &rtU_Motor;
+  rtM_Motor->outputs            = &rtY_Motor;
 
-  /* Pack LEFT motor data into RTM */
-  rtM_Left->defaultParam        = &rtP_Left;
-  rtM_Left->dwork               = &rtDW_Left;
-  rtM_Left->inputs              = &rtU_Left;
-  rtM_Left->outputs             = &rtY_Left;
-
-  /* Pack RIGHT motor data into RTM */
-  rtM_Right->defaultParam       = &rtP_Right;
-  rtM_Right->dwork              = &rtDW_Right;
-  rtM_Right->inputs             = &rtU_Right;
-  rtM_Right->outputs            = &rtY_Right;
-
-  /* Initialize BLDC controllers */
-  BLDC_controller_initialize(rtM_Left);
-  BLDC_controller_initialize(rtM_Right);
+  /* Initialize BLDC controller */
+  BLDC_controller_initialize(rtM_Motor);
 }
 
 void Input_Lim_Init(void) {     // Input Limitations - ! Do NOT touch !
-  if (rtP_Left.b_fieldWeakEna || rtP_Right.b_fieldWeakEna) {
+  if (rtP_Motor.b_fieldWeakEna) {
     INPUT_MAX = MAX( 1000, FIELD_WEAK_HI);
     INPUT_MIN = MIN(-1000,-FIELD_WEAK_HI);
   } else {
@@ -367,8 +355,8 @@ void Input_Init(void) {
         printf("Using the configuration from EEprom\r\n");
       #endif
 
-      EE_ReadVariable(VirtAddVarTab[1] , &readVal); rtP_Left.i_max = rtP_Right.i_max = (int16_t)readVal;
-      EE_ReadVariable(VirtAddVarTab[2] , &readVal); rtP_Left.n_max = rtP_Right.n_max = (int16_t)readVal;
+      EE_ReadVariable(VirtAddVarTab[1] , &readVal); rtP_Motor.i_max = (int16_t)readVal;
+      EE_ReadVariable(VirtAddVarTab[2] , &readVal); rtP_Motor.n_max = (int16_t)readVal;
       for (uint8_t i=0; i<INPUTS_NR; i++) {
         EE_ReadVariable(VirtAddVarTab[ 3+8*i] , &readVal); input1[i].typ = (uint8_t)readVal;
         EE_ReadVariable(VirtAddVarTab[ 4+8*i] , &readVal); input1[i].min = (int16_t)readVal;
@@ -520,24 +508,12 @@ void beepShortMany(uint8_t cnt, int8_t dir) {
 void calcAvgSpeed(void) {
     // Calculate measured average speed. The minus sign (-) is because motors spin in opposite directions
     speedAvg = 0;
-    #if defined(MOTOR_LEFT_ENA)
-      #if defined(INVERT_L_DIRECTION)
-        speedAvg -= rtY_Left.n_mot;
-      #else
-        speedAvg += rtY_Left.n_mot;
-      #endif
-    #endif
-    #if defined(MOTOR_RIGHT_ENA)
+    #if defined(MOTOR_ENA)
       #if defined(INVERT_R_DIRECTION)
-        speedAvg += rtY_Right.n_mot;
+        speedAvg += rtY_Motor.n_mot;
       #else
-        speedAvg -= rtY_Right.n_mot;
+        speedAvg -= rtY_Motor.n_mot;
       #endif
-
-      // Average only if both motors are enabled
-      #if defined(MOTOR_LEFT_ENA)
-        speedAvg /= 2;
-      #endif  
     #endif
 
     // Handle the case when SPEED_COEFFICIENT sign is negative (which is when most significant bit is 1)
@@ -701,20 +677,20 @@ void updateCurSpdLim(void) {
       
   if (input1[inIdx].typ != 0){
     // Update current limit
-    rtP_Left.i_max = rtP_Right.i_max  = (int16_t)((I_MOT_MAX * A2BIT_CONV * cur_factor) >> 12);    // fixdt(0,16,16) to fixdt(1,16,4)
+    rtP_Motor.i_max  = (int16_t)((I_MOT_MAX * A2BIT_CONV * cur_factor) >> 12);    // fixdt(0,16,16) to fixdt(1,16,4)
     cur_spd_valid   = 1;  // Mark update to be saved in Flash at shutdown
   }
 
   if (input2[inIdx].typ != 0){
     // Update speed limit
-    rtP_Left.n_max = rtP_Right.n_max  = (int16_t)((N_MOT_MAX * spd_factor) >> 12);                 // fixdt(0,16,16) to fixdt(1,16,4)
+    rtP_Motor.n_max  = (int16_t)((N_MOT_MAX * spd_factor) >> 12);                 // fixdt(0,16,16) to fixdt(1,16,4)
     cur_spd_valid  += 2;  // Mark update to be saved in Flash at shutdown
   }
 
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
   // cur_spd_valid: 0 = No limit changed, 1 = Current limit changed, 2 = Speed limit changed, 3 = Both limits changed
   printf("Limits (%i)\r\nCurrent: fixdt:%li factor%i i_max:%i \r\nSpeed: fixdt:%li factor:%i n_max:%i\r\n",
-          cur_spd_valid, input1_fixdt, cur_factor, rtP_Left.i_max, input2_fixdt, spd_factor, rtP_Left.n_max);
+          cur_spd_valid, input1_fixdt, cur_factor, rtP_Motor.i_max, input2_fixdt, spd_factor, rtP_Motor.n_max);
   #endif
 
 #endif
@@ -730,20 +706,20 @@ void updateCurSpdLim(void) {
  */
 void standstillHold(void) {
   #if defined(STANDSTILL_HOLD_ENABLE) && (CTRL_TYP_SEL == FOC_CTRL) && (CTRL_MOD_REQ != SPD_MODE)
-    if (!rtP_Left.b_cruiseCtrlEna) {                                  // If Stanstill in NOT Active -> try Activation
+    if (!rtP_Motor.b_cruiseCtrlEna) {                                  // If Stanstill in NOT Active -> try Activation
       if (((input1[inIdx].cmd > 50 || input2[inIdx].cmd < -50) && speedAvgAbs < 30) // Check if Brake is pressed AND measured speed is small
           || (input2[inIdx].cmd < 20 && speedAvgAbs < 5)) {           // OR Throttle is small AND measured speed is very small
-        rtP_Left.n_cruiseMotTgt   = 0;
-        rtP_Right.n_cruiseMotTgt  = 0;
-        rtP_Left.b_cruiseCtrlEna  = 1;
-        rtP_Right.b_cruiseCtrlEna = 1;
+        rtP_Motor.n_cruiseMotTgt   = 0;
+        rtP_Motor.n_cruiseMotTgt  = 0;
+        rtP_Motor.b_cruiseCtrlEna  = 1;
+        rtP_Motor.b_cruiseCtrlEna = 1;
         standstillAcv = 1;
       } 
     }
     else {                                                            // If Stanstill is Active -> try Deactivation
       if (input1[inIdx].cmd < 20 && input2[inIdx].cmd > 50 && !cruiseCtrlAcv) { // Check if Brake is released AND Throttle is pressed AND no Cruise Control
-        rtP_Left.b_cruiseCtrlEna  = 0;
-        rtP_Right.b_cruiseCtrlEna = 0;
+        rtP_Motor.b_cruiseCtrlEna  = 0;
+        rtP_Motor.b_cruiseCtrlEna = 0;
         standstillAcv = 0;
       }
     }
@@ -796,16 +772,15 @@ void electricBrake(uint16_t speedBlend, uint8_t reverseDir) {
  */
 void cruiseControl(uint8_t button) {
   #ifdef CRUISE_CONTROL_SUPPORT
-    if (button && !rtP_Left.b_cruiseCtrlEna) {                          // Cruise control activated
-      rtP_Left.n_cruiseMotTgt   = rtY_Left.n_mot;
-      rtP_Right.n_cruiseMotTgt  = rtY_Right.n_mot;
-      rtP_Left.b_cruiseCtrlEna  = 1;
-      rtP_Right.b_cruiseCtrlEna = 1;
+    if (button && !rtP_Motor.b_cruiseCtrlEna) {                          // Cruise control activated
+      rtP_Motor.n_cruiseMotTgt  = rtY_Motor.n_mot;
+      rtP_Motor.b_cruiseCtrlEna  = 1;
+      rtP_Motor.b_cruiseCtrlEna = 1;
       cruiseCtrlAcv = 1;
       beepShortMany(2, 1);                                              // 200 ms beep delay. Acts as a debounce also.
-    } else if (button && rtP_Left.b_cruiseCtrlEna && !standstillAcv) {  // Cruise control deactivated if no Standstill Hold is active
-      rtP_Left.b_cruiseCtrlEna  = 0;
-      rtP_Right.b_cruiseCtrlEna = 0;
+    } else if (button && rtP_Motor.b_cruiseCtrlEna && !standstillAcv) {  // Cruise control deactivated if no Standstill Hold is active
+      rtP_Motor.b_cruiseCtrlEna  = 0;
+      rtP_Motor.b_cruiseCtrlEna = 0;
       cruiseCtrlAcv = 0;
       beepShortMany(2, -1);
     }
@@ -1453,8 +1428,8 @@ void usart1_tx_Send(void)
   Feedback.start	          = (uint16_t)SERIAL_START_FRAME;
   Feedback.cmd1             = (int16_t)input1[inIdx].cmd;               // MASTER   => cmd1                    => ARDUINO.
   Feedback.cmd2             = (int16_t)input2[inIdx].cmd;               // MASTER   => cmd2                    => ARDUINO.
-  Feedback.speedR_meas	    = (int16_t)rtY_Right.n_mot;                 // MASTER   => speedR_meas             => ARDUINO.
-  Feedback.speedL_meas	    = (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas         => MASTER   => speedL_meas       => ARDUINO.
+  Feedback.speedMaster_meas	= (int16_t)rtY_Motor.n_mot;                 // MASTER   => speedR_meas             => ARDUINO.
+  Feedback.speedSlave_meas	= (int16_t)speedSlave_meas;                 // SLAVE    => speedSlave_meas         => MASTER   => speedL_meas       => ARDUINO.
   Feedback.batVoltage	      = (int16_t)batVoltageCalib;                 // MASTER   => batVoltageCalib         => ARDUINO.
   Feedback.boardTempMaster  = (int16_t)board_temp_deg_c_Master;         // MASTER   => board_temp_deg_c_Master => ARDUINO.
   Feedback.boardTempSlave	  = (int16_t)board_temp_deg_c_Slave;          // MASTER   => board_temp_deg_c_Slave  => ARDUINO.
@@ -1467,8 +1442,8 @@ void usart1_tx_Send(void)
     Feedback.checksum   = (uint16_t) (Feedback.start ^ 
                                       Feedback.cmd1 ^ 
                                       Feedback.cmd2 ^ 
-                                      Feedback.speedR_meas ^ 
-                                      Feedback.speedL_meas ^ 
+                                      Feedback.speedMaster_meas ^ 
+                                      Feedback.speedSlave_meas ^ 
                                       Feedback.batVoltage ^ 
                                       Feedback.boardTempMaster ^ 
                                       Feedback.boardTempSlave ^ 
@@ -1492,7 +1467,7 @@ void usart2_tx_Send(void)
     Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
     Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas  <=> SLAVE.
     Send_Usart2.bateryVoltage	    = (int16_t)batVoltageCalib;           // MASTER   => bateryVoltage     => SLAVE.
-    Send_Usart2.errCode           = (int16_t)rtY_Right.z_errCode;       // MASTER   => errCode          <=> SLAVE.
+    Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Master;   // MASTER   => boardTemp        <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
@@ -1503,9 +1478,9 @@ void usart2_tx_Send(void)
     Send_Usart2.enableMotors      = (int16_t)0U;                        // SLAVE    => enableMotors      => MASTER.
     Send_Usart2.speedMaster       = (int16_t)0U;                        // SLAVE    => speedMaster       => MASTER.
     Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
-    Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Right.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
+    Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Motor.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
     Send_Usart2.bateryVoltage	    = (int16_t)0U;                        // SLAVE    => bateryVoltage     => MASTER.
-    Send_Usart2.errCode           = (int16_t)rtY_Right.z_errCode;       // SLAVE    => errCode           => MASTER.
+    Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // SLAVE    => errCode           => MASTER.
     Send_Usart2.enableFin         = (int16_t)enableFinSlave;            // MASTER   => enableFinSlave   <=> SLAVE.
     Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Slave;    // SLAVE    => boardTemp         => MASTER.
     Send_Usart2.chargeStatus      = (int16_t)0U;                        // SLAVE    => ChargeStatus      => MASTER.
@@ -1590,7 +1565,7 @@ void sideboardLeds(uint8_t *leds) {
     // Error handling
     // Critical error:  LED1 on (RED)     + high pitch beep (hadled in main)
     // Soft error:      LED3 on (YELLOW)  + low  pitch beep (hadled in main)
-    if (rtY_Left.z_errCode || rtY_Right.z_errCode) {
+    if (rtY_Motor.z_errCode) {
       *leds |= LED1_SET;
       *leds &= ~LED3_SET & ~LED2_SET;
     }
@@ -1638,22 +1613,22 @@ void sideboardSensors(uint8_t sensors) {
     if (sensor1_trig) {
       switch (sensor1_index) {
         case 0:     // FOC VOLTAGE
-          rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = FOC_CTRL;
+          rtP_Motor.z_ctrlTypSel = FOC_CTRL;
           ctrlModReqRaw         = VLT_MODE;
           break;
         case 1:     // FOC SPEED
-          rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = FOC_CTRL;
+          rtP_Motor.z_ctrlTypSel = FOC_CTRL;
           ctrlModReqRaw         = SPD_MODE;
           break;
         case 2:     // FOC TORQUE
-          rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = FOC_CTRL;
+          rtP_Motor.z_ctrlTypSel = FOC_CTRL;
           ctrlModReqRaw         = TRQ_MODE;
           break;
         case 3:     // SINUSOIDAL
-          rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = SIN_CTRL;
+          rtP_Motor.z_ctrlTypSel = SIN_CTRL;
           break;
         case 4:     // COMMUTATION
-          rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = COM_CTRL;
+          rtP_Motor.z_ctrlTypSel = COM_CTRL;
           break;
       }
       if (inIdx == inIdx_prev) { beepShortMany(sensor1_index + 1, 1); }
@@ -1684,13 +1659,13 @@ void sideboardSensors(uint8_t sensors) {
         if (sensor2_trig) {
           switch (sensor2_index) {
             case 0:     // FW Disabled
-              rtP_Left.b_fieldWeakEna  = 0; 
-              rtP_Right.b_fieldWeakEna = 0;
+              rtP_Motor.b_fieldWeakEna  = 0; 
+              rtP_Motor.b_fieldWeakEna = 0;
               Input_Lim_Init();
               break;
             case 1:     // FW Enabled
-              rtP_Left.b_fieldWeakEna  = 1; 
-              rtP_Right.b_fieldWeakEna = 1;
+              rtP_Motor.b_fieldWeakEna  = 1; 
+              rtP_Motor.b_fieldWeakEna = 1;
               Input_Lim_Init();
               break; 
           }
@@ -1725,8 +1700,8 @@ void saveConfig() {
 
       HAL_FLASH_Unlock();
       EE_WriteVariable(VirtAddVarTab[0] , (uint16_t)FLASH_WRITE_KEY);
-      EE_WriteVariable(VirtAddVarTab[1] , (uint16_t)rtP_Left.i_max);
-      EE_WriteVariable(VirtAddVarTab[2] , (uint16_t)rtP_Left.n_max);
+      EE_WriteVariable(VirtAddVarTab[1] , (uint16_t)rtP_Motor.i_max);
+      EE_WriteVariable(VirtAddVarTab[2] , (uint16_t)rtP_Motor.n_max);
       for (uint8_t i=0; i<INPUTS_NR; i++) {
         EE_WriteVariable(VirtAddVarTab[ 3+8*i] , (uint16_t)input1[i].typ);
         EE_WriteVariable(VirtAddVarTab[ 4+8*i] , (uint16_t)input1[i].min);

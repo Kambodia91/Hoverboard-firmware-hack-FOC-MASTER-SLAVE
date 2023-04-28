@@ -43,13 +43,9 @@
 
 #define MAX_PARAM_WATCH 15
 
-extern ExtY rtY_Left;                   /* External outputs */
-extern ExtU rtU_Left;                   /* External inputs */
-extern P    rtP_Left;
-
-extern ExtY rtY_Right;                  /* External outputs */
-extern ExtU rtU_Right;                      /* External inputs */
-extern P    rtP_Right;
+extern ExtY rtY_Motor;                  /* External outputs */
+extern ExtU rtU_Motor;                      /* External inputs */
+extern P    rtP_Motor;
 
 
 extern InputStruct input1[];            // input structure
@@ -88,14 +84,14 @@ const parameter_entry params[] = {
   // CONTROL PARAMETERS
   // Type       ,Name                 ,Datatype ,ValueL ptr                  ,ValueR                    ,EEPRM Addr ,Init              Int/Ext ,Min    ,Max    ,Div             ,Mul  ,Fix   ,Callback Function  ,Help text
     {PARAMETER  ,"CTRL_MOD"           ,ADD_PARAM(ctrlModReqRaw)              ,NULL                      ,0          ,CTRL_MOD_REQ      ,0      ,1      ,3      ,0               ,0    ,0     ,NULL               ,"Ctrl mode 1:VLT 2:SPD 3:TRQ"},
-    {PARAMETER  ,"CTRL_TYP"           ,ADD_PARAM(rtP_Left.z_ctrlTypSel)      ,&rtP_Right.z_ctrlTypSel   ,0          ,CTRL_TYP_SEL      ,0      ,0      ,2      ,0               ,0    ,0     ,NULL               ,"Ctrl type 0:COM 1:SIN 2:FOC"},
-    {PARAMETER  ,"I_MOT_MAX"          ,ADD_PARAM(rtP_Left.i_max)             ,&rtP_Right.i_max          ,1          ,I_MOT_MAX         ,1      ,1      ,40     ,A2BIT_CONV      ,0    ,4     ,NULL               ,"Max phase current A"},
-    {PARAMETER  ,"N_MOT_MAX"          ,ADD_PARAM(rtP_Left.n_max)             ,&rtP_Right.n_max          ,2          ,N_MOT_MAX         ,1      ,10     ,2000   ,0               ,0    ,4     ,NULL               ,"Max motor RPM"},
-    {PARAMETER  ,"FI_WEAK_ENA"        ,ADD_PARAM(rtP_Left.b_fieldWeakEna)    ,&rtP_Right.b_fieldWeakEna ,0          ,FIELD_WEAK_ENA    ,0      ,0      ,1      ,0               ,0    ,0     ,NULL               ,"Enable field weak"},
-  	{PARAMETER  ,"FI_WEAK_HI"         ,ADD_PARAM(rtP_Left.r_fieldWeakHi)     ,&rtP_Right.r_fieldWeakHi  ,0          ,FIELD_WEAK_HI     ,1      ,0      ,1500   ,0               ,0    ,4     ,Input_Lim_Init     ,"Field weak high RPM"},
-	  {PARAMETER  ,"FI_WEAK_LO"         ,ADD_PARAM(rtP_Left.r_fieldWeakLo)     ,&rtP_Right.r_fieldWeakLo  ,0          ,FIELD_WEAK_LO     ,1      ,0      ,1000   ,0               ,0    ,4     ,Input_Lim_Init     ,"Field weak low RPM"},
-    {PARAMETER  ,"FI_WEAK_MAX"        ,ADD_PARAM(rtP_Left.id_fieldWeakMax)   ,&rtP_Right.id_fieldWeakMax,0          ,FIELD_WEAK_MAX    ,1      ,0      ,20     ,A2BIT_CONV      ,0    ,4     ,NULL               ,"Field weak max current A(FOC)"},
-    {PARAMETER  ,"PHA_ADV_MAX"        ,ADD_PARAM(rtP_Left.a_phaAdvMax)       ,&rtP_Right.a_phaAdvMax    ,0          ,PHASE_ADV_MAX     ,1      ,0      ,55     ,0               ,0    ,4     ,NULL               ,"Max Phase Adv angle Deg(SIN)"},     
+    {PARAMETER  ,"CTRL_TYP"           ,ADD_PARAM(rtP_Motor.z_ctrlTypSel)      ,&rtP_Motor.z_ctrlTypSel   ,0          ,CTRL_TYP_SEL      ,0      ,0      ,2      ,0               ,0    ,0     ,NULL               ,"Ctrl type 0:COM 1:SIN 2:FOC"},
+    {PARAMETER  ,"I_MOT_MAX"          ,ADD_PARAM(rtP_Motor.i_max)             ,&rtP_Motor.i_max          ,1          ,I_MOT_MAX         ,1      ,1      ,40     ,A2BIT_CONV      ,0    ,4     ,NULL               ,"Max phase current A"},
+    {PARAMETER  ,"N_MOT_MAX"          ,ADD_PARAM(rtP_Motor.n_max)             ,&rtP_Motor.n_max          ,2          ,N_MOT_MAX         ,1      ,10     ,2000   ,0               ,0    ,4     ,NULL               ,"Max motor RPM"},
+    {PARAMETER  ,"FI_WEAK_ENA"        ,ADD_PARAM(rtP_Motor.b_fieldWeakEna)    ,&rtP_Motor.b_fieldWeakEna ,0          ,FIELD_WEAK_ENA    ,0      ,0      ,1      ,0               ,0    ,0     ,NULL               ,"Enable field weak"},
+  	{PARAMETER  ,"FI_WEAK_HI"         ,ADD_PARAM(rtP_Motor.r_fieldWeakHi)     ,&rtP_Motor.r_fieldWeakHi  ,0          ,FIELD_WEAK_HI     ,1      ,0      ,1500   ,0               ,0    ,4     ,Input_Lim_Init     ,"Field weak high RPM"},
+	  {PARAMETER  ,"FI_WEAK_LO"         ,ADD_PARAM(rtP_Motor.r_fieldWeakLo)     ,&rtP_Motor.r_fieldWeakLo  ,0          ,FIELD_WEAK_LO     ,1      ,0      ,1000   ,0               ,0    ,4     ,Input_Lim_Init     ,"Field weak low RPM"},
+    {PARAMETER  ,"FI_WEAK_MAX"        ,ADD_PARAM(rtP_Motor.id_fieldWeakMax)   ,&rtP_Motor.id_fieldWeakMax,0          ,FIELD_WEAK_MAX    ,1      ,0      ,20     ,A2BIT_CONV      ,0    ,4     ,NULL               ,"Field weak max current A(FOC)"},
+    {PARAMETER  ,"PHA_ADV_MAX"        ,ADD_PARAM(rtP_Motor.a_phaAdvMax)       ,&rtP_Motor.a_phaAdvMax    ,0          ,PHASE_ADV_MAX     ,1      ,0      ,55     ,0               ,0    ,4     ,NULL               ,"Max Phase Adv angle Deg(SIN)"},     
   // INPUT PARAMETERS
   // Type       ,Name                 ,ValueL ptr                            ,ValueR                    ,EEPRM Addr ,Init              Int/Ext ,Min    ,Max    ,Div             ,Mul  ,Fix   ,Callback Function  ,Help text
     {VARIABLE   ,"IN1_RAW"            ,ADD_PARAM(input1[0].raw)              ,NULL                      ,0          ,0                 ,0      ,RAW_MIN,RAW_MAX,0               ,0    ,0     ,0                  ,"Input1 raw"},        
@@ -135,8 +131,8 @@ const parameter_entry params[] = {
     {VARIABLE   ,"CMDL"               ,ADD_PARAM(cmdL)                       ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Left Motor Command"},
     {VARIABLE   ,"CMDR"               ,ADD_PARAM(cmdR)                       ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Right Motor Command"},
     {VARIABLE   ,"SPD_AVG"            ,ADD_PARAM(speedAvg)                   ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Motor Measured Avg RPM"},
-    {VARIABLE   ,"SPDL"               ,ADD_PARAM(rtY_Left.n_mot)             ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Left Motor Measured RPM"},
-    {VARIABLE   ,"SPDR"               ,ADD_PARAM(rtY_Right.n_mot)            ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Right Motor Measured RPM"},
+    // {VARIABLE   ,"SPDL"               ,ADD_PARAM(rtY_Left.n_mot)             ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Left Motor Measured RPM"},
+    {VARIABLE   ,"SPDR"               ,ADD_PARAM(rtY_Motor.n_mot)            ,NULL                      ,0          ,0                 ,0      ,0      ,0      ,0               ,0    ,0     ,NULL               ,"Right Motor Measured RPM"},
     {VARIABLE   ,"RATE"               ,0       , NULL                        ,NULL                      ,0          ,RATE              ,0      ,0      ,0      ,0               ,0    ,4     ,NULL               ,"Rate *10"},
     {VARIABLE   ,"SPD_COEF"           ,0       , NULL                        ,NULL                      ,0          ,SPEED_COEFFICIENT ,0      ,0      ,0      ,0               ,10   ,14    ,NULL               ,"Speed Coefficient *10"},
     {VARIABLE   ,"STR_COEF"           ,0       , NULL                        ,NULL                      ,0          ,STEER_COEFFICIENT ,0      ,0      ,0      ,0               ,10   ,14    ,NULL               ,"Steer Coefficient *10"},

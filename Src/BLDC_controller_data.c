@@ -150,7 +150,7 @@ const ConstP rtConstP = {
   { 0, 2, 0, 1, 4, 3, 5, 0 }
 };
 
-P rtP_Left = {
+P rtP_Motor = {
   /* Variable: dV_openRate
    * Referenced by: '<S37>/dV_openRate'
    */

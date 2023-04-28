@@ -33,61 +33,53 @@
 #include "BLDC_controller.h"           /* Model's header file */
 #include "rtwtypes.h"
 
-extern RT_MODEL *const rtM_Left;
-extern RT_MODEL *const rtM_Right;
+extern RT_MODEL *const rtM_Motor;
 
-extern DW   rtDW_Left;                  /* Observable states */
-extern ExtU rtU_Left;                   /* External inputs */
-extern ExtY rtY_Left;                   /* External outputs */
-extern P    rtP_Left;
+extern DW             rtDW_Motor;                 /* Observable states */
+extern ExtU           rtU_Motor;                  /* External inputs */
+extern ExtY           rtY_Motor;                  /* External outputs */
+extern P              rtP_Motor;                  /* Block parameters (auto storage) */
 
-extern DW   rtDW_Right;                 /* Observable states */
-extern ExtU rtU_Right;                  /* External inputs */
-extern ExtY rtY_Right;                  /* External outputs */
 // ###############################################################################
 
-static int16_t pwm_margin;              /* This margin allows to have a window in the PWM signal for proper FOC Phase currents measurement */
+static int16_t        pwm_margin;                 /* This margin allows to have a window in the PWM signal for proper FOC Phase currents measurement */
 
-extern uint8_t ctrlModReq;
-static int16_t curDC_max = (I_DC_MAX * A2BIT_CONV);
-int16_t curL_phaA = 0, curL_phaB = 0, curL_DC = 0;
-int16_t curR_phaB = 0, curR_phaC = 0, curR_DC = 0;
+extern uint8_t        ctrlModReq;
+static int16_t        curDC_max       = (I_DC_MAX * A2BIT_CONV);
+int16_t               cur_phaB        = 0; 
+int16_t               cur_phaC        = 0;
+int16_t               cur_DC          = 0;
+volatile int          pwm             = 0;
 
-volatile int pwml = 0;
-volatile int pwm = 0;
+extern volatile adc_buf_t adc_buffer;             // adc.
 
-extern volatile adc_buf_t adc_buffer;
+uint8_t               buzzerFreq      = 0;
+uint8_t               buzzerPattern   = 0;
+uint8_t               buzzerCount     = 0;
+volatile uint32_t     buzzerTimer     = 0;
+static uint8_t        buzzerPrev      = 0;
+static uint8_t        buzzerIdx       = 0;
 
-uint8_t buzzerFreq          = 0;
-uint8_t buzzerPattern       = 0;
-uint8_t buzzerCount         = 0;
-volatile uint32_t buzzerTimer = 0;
-static uint8_t  buzzerPrev  = 0;
-static uint8_t  buzzerIdx   = 0;
+int16_t               errCode_Master;
+int16_t               errCode_Slave;
 
-int16_t errCode_Master;
-int16_t errCode_Slave;
+uint8_t               enable          = 0;        // initially motors are disabled for SAFETY
+uint16_t              enableMotors    = 0;        // message ennable from arduino (uart1)
+uint16_t              enableFinMaster = 0;        // final permission to start the engine from Master
+uint16_t              enableFinSlave  = 0;        // final permission to start the engine From Slave
+int16_t               chargeStatus    = 0;        // Status connection charge.
+static uint8_t        enableFin       = 0;        // final permission to start the engine
 
-uint8_t         enable            = 0;        // initially motors are disabled for SAFETY
-uint16_t        enableMotors      = 0;        // message from uart1
-uint16_t        enableFinMaster   = 0;
-uint16_t        enableFinSlave    = 0;
-int16_t         chargeStatus;            // Status connection charge.
-static uint8_t  enableFin         = 0;
+static const uint16_t pwm_res         = 64000000 / 2 / PWM_FREQ; // = 2000
 
-static const uint16_t pwm_res  = 64000000 / 2 / PWM_FREQ; // = 2000
+static uint16_t       offsetcount     = 0;
+static int16_t        offsetrB        = 2000;
+static int16_t        offsetrC        = 2000;
+static int16_t        offsetdc        = 2000;
 
-static uint16_t offsetcount = 0;
-//static int16_t offsetrlA    = 2000; // Unnecessary
-//static int16_t offsetrlB    = 2000; // Unnecessary
-static int16_t offsetrrB    = 2000;
-static int16_t offsetrrC    = 2000;
-//static int16_t offsetdcl    = 2000; // Unnecessary
-static int16_t offsetdcr    = 2000;
-
-int16_t        batVoltage       = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE;
+int16_t               batVoltage      = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE;
 #ifdef BOARD_MASTER
-static int32_t batVoltageFixdt  = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE << 16;  // Fixed-point filter output initialized at 400 V*100/cell = 4 V/cell converted to fixed-point
+static int32_t        batVoltageFixdt = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE << 16;  // Fixed-point filter output initialized at 400 V*100/cell = 4 V/cell converted to fixed-point
 #endif
 // =================================
 // DMA interrupt frequency =~ 16 kHz
@@ -100,42 +92,30 @@ void DMA1_Channel1_IRQHandler(void) {
 
   if(offsetcount < 2000) {  // calibrate ADC offsets
     offsetcount++;
-    //offsetrlA = (adc_buffer.rlA + offsetrlA) / 2; // Unnecessary
-    //offsetrlB = (adc_buffer.rlB + offsetrlB) / 2; // Unnecessary
-    offsetrrB = (adc_buffer.rrB + offsetrrB) / 2;
-    offsetrrC = (adc_buffer.rrC + offsetrrC) / 2;
-    //offsetdcl = (adc_buffer.dcl + offsetdcl) / 2; // Unnecessary
-    offsetdcr = (adc_buffer.dcr + offsetdcr) / 2;
+    offsetrB = (adc_buffer.curB + offsetrB) / 2;
+    offsetrC = (adc_buffer.curC + offsetrC) / 2;
+    offsetdc = (adc_buffer.curDc + offsetdc) / 2;
     return;
   }
 #ifdef BOARD_MASTER
   if (buzzerTimer % 1000 == 0) {  // Filter battery voltage at a slower sampling rate
-    filtLowPass32(adc_buffer.batt1, BAT_FILT_COEF, &batVoltageFixdt);
+    filtLowPass32(adc_buffer.batt, BAT_FILT_COEF, &batVoltageFixdt);
     batVoltage = (int16_t)(batVoltageFixdt >> 16);  // convert fixed-point to integer
   }
 #endif
-  // Get Left motor currents
-  curL_phaA = 0;//(int16_t)(offsetrlA - adc_buffer.rlA); // Unnecessary
-  curL_phaB = 0;//(int16_t)(offsetrlB - adc_buffer.rlB); // Unnecessary
-  curL_DC   = 0;//(int16_t)(offsetdcl - adc_buffer.dcl); // Unnecessary
-  
-  // Get Right motor currents
-  curR_phaB = (int16_t)(offsetrrB - adc_buffer.rrB);
-  curR_phaC = (int16_t)(offsetrrC - adc_buffer.rrC);
-  curR_DC   = (int16_t)(offsetdcr - adc_buffer.dcr);
+  // Get Motor currents
+  cur_phaB = (int16_t)(offsetrB - adc_buffer.curB);
+  cur_phaC = (int16_t)(offsetrC - adc_buffer.curC);
+  cur_DC   = (int16_t)(offsetdc - adc_buffer.curDc);
 
   // Disable PWM when current limit is reached (current chopping)
   // This is the Level 2 of current protection. The Level 1 should kick in first given by I_MOT_MAX
-  if(ABS(curL_DC) > curDC_max || enable == 0 || enableMotors == 0 || chargeStatus == 1) {
-    LEFT_TIM->BDTR &= ~TIM_BDTR_MOE;
+  if(ABS(cur_DC)  > curDC_max || enable == 0 || enableMotors == 0 || chargeStatus == 1) {
+    ADC_TIM->BDTR &= ~TIM_BDTR_MOE;
+    MOTOR_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
-    LEFT_TIM->BDTR |= TIM_BDTR_MOE;
-  }
-
-  if(ABS(curR_DC)  > curDC_max || enable == 0 || enableMotors == 0 || chargeStatus == 1) {
-    RIGHT_TIM->BDTR &= ~TIM_BDTR_MOE;
-  } else {
-    RIGHT_TIM->BDTR |= TIM_BDTR_MOE;
+    ADC_TIM->BDTR |= TIM_BDTR_MOE;
+    MOTOR_TIM->BDTR |= TIM_BDTR_MOE;
   }
 
   // Create square wave for buzzer
@@ -160,7 +140,7 @@ void DMA1_Channel1_IRQHandler(void) {
   }
 
   // Adjust pwm_margin depending on the selected Control Type
-  if (rtP_Left.z_ctrlTypSel == FOC_CTRL) {
+  if (rtP_Motor.z_ctrlTypSel == FOC_CTRL) {
     pwm_margin = 110;
   } else {
     pwm_margin = 0;
@@ -168,8 +148,7 @@ void DMA1_Channel1_IRQHandler(void) {
 
   // ############################### MOTOR CONTROL ###############################
 
-  int ul, vl, wl;
-  int ur, vr, wr;
+  int u, v, w;
   static boolean_T OverrunFlag = false;
 
   /* Check for overrun */
@@ -178,96 +157,58 @@ void DMA1_Channel1_IRQHandler(void) {
   }
   OverrunFlag = true;
 
-  /* Make sure to stop BOTH motors in case of an error */
-  enableFin = enable && !rtY_Left.z_errCode && !errCode_Slave && !errCode_Master && enableMotors;
+  /* Make sure to stop motor in case of an error */
+  enableFin = enable && !errCode_Slave && !errCode_Master && enableMotors;
     #ifdef BOARD_MASTER
     enableFinMaster = enableFin;
     #endif
     #ifdef BOARD_SLAVE
     enableFinSlave = enableFin;
     #endif
-
-
-  // ========================= LEFT MOTOR ============================ 
-    // Get hall sensors values
-    uint8_t hall_ul = 0;// !(LEFT_HALL_U_PORT->IDR & LEFT_HALL_U_PIN); // Unnecessary
-    uint8_t hall_vl = 0;//!(LEFT_HALL_V_PORT->IDR & LEFT_HALL_V_PIN); // Unnecessary
-    uint8_t hall_wl = 0;//!(LEFT_HALL_W_PORT->IDR & LEFT_HALL_W_PIN); // Unnecessary
-
-    /* Set motor inputs here */
-    rtU_Left.b_motEna     = enableFin;
-    rtU_Left.z_ctrlModReq = ctrlModReq;  
-    rtU_Left.r_inpTgt     = pwml;
-    rtU_Left.b_hallA      = hall_ul;
-    rtU_Left.b_hallB      = hall_vl;
-    rtU_Left.b_hallC      = hall_wl;
-    rtU_Left.i_phaAB      = curL_phaA;
-    rtU_Left.i_phaBC      = curL_phaB;
-    rtU_Left.i_DCLink     = curL_DC;
-    // rtU_Left.a_mechAngle   = ...; // Angle input in DEGREES [0,360] in fixdt(1,16,4) data type. If `angle` is float use `= (int16_t)floor(angle * 16.0F)` If `angle` is integer use `= (int16_t)(angle << 4)`
-    
-    /* Step the controller */
-    #ifdef MOTOR_LEFT_ENA    
-    BLDC_controller_step(rtM_Left);
-    #endif
-
-    /* Get motor outputs here */
-    ul            = rtY_Left.DC_phaA;
-    vl            = rtY_Left.DC_phaB;
-    wl            = rtY_Left.DC_phaC;
-  // errCodeLeft  = rtY_Left.z_errCode;
-  // motSpeedLeft = rtY_Left.n_mot;
-  // motAngleLeft = rtY_Left.a_elecAngle;
-
-    /* Apply commands */
-    LEFT_TIM->LEFT_TIM_U    = (uint16_t)CLAMP(ul + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
-    LEFT_TIM->LEFT_TIM_V    = (uint16_t)CLAMP(vl + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
-    LEFT_TIM->LEFT_TIM_W    = (uint16_t)CLAMP(wl + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
-  // =================================================================
   
 
-  // ========================= RIGHT MOTOR ===========================  
+  // ========================= MOTOR ===========================  
     // Get hall sensors values
-    uint8_t hall_ur = !(RIGHT_HALL_U_PORT->IDR & RIGHT_HALL_U_PIN);
-    uint8_t hall_vr = !(RIGHT_HALL_V_PORT->IDR & RIGHT_HALL_V_PIN);
-    uint8_t hall_wr = !(RIGHT_HALL_W_PORT->IDR & RIGHT_HALL_W_PIN);
+    uint8_t hall_u = !(MOTOR_HALL_U_PORT->IDR & MOTOR_HALL_U_PIN);
+    uint8_t hall_v = !(MOTOR_HALL_V_PORT->IDR & MOTOR_HALL_V_PIN);
+    uint8_t hall_w = !(MOTOR_HALL_W_PORT->IDR & MOTOR_HALL_W_PIN);
 
     /* Set motor inputs here */
-    rtU_Right.b_motEna      = enableFin;
-    rtU_Right.z_ctrlModReq  = ctrlModReq;
-    rtU_Right.r_inpTgt      = pwm;
-    rtU_Right.b_hallA       = hall_ur;
-    rtU_Right.b_hallB       = hall_vr;
-    rtU_Right.b_hallC       = hall_wr;
-    rtU_Right.i_phaAB       = curR_phaB;
-    rtU_Right.i_phaBC       = curR_phaC;
-    rtU_Right.i_DCLink      = curR_DC;
-    // rtU_Right.a_mechAngle   = ...; // Angle input in DEGREES [0,360] in fixdt(1,16,4) data type. If `angle` is float use `= (int16_t)floor(angle * 16.0F)` If `angle` is integer use `= (int16_t)(angle << 4)`
-    
+    rtU_Motor.b_motEna      = enableFin;
+    rtU_Motor.z_ctrlModReq  = ctrlModReq;
+    rtU_Motor.r_inpTgt      = pwm;
+    rtU_Motor.b_hallA       = hall_u;
+    rtU_Motor.b_hallB       = hall_v;
+    rtU_Motor.b_hallC       = hall_w;
+    rtU_Motor.i_phaAB       = cur_phaB;
+    rtU_Motor.i_phaBC       = cur_phaC;
+    rtU_Motor.i_DCLink      = cur_DC;
+    // rtU_Motor.a_mechAngle   = ...; // Angle input in DEGREES [0,360] in fixdt(1,16,4) data type. If `angle` is float use `= (int16_t)floor(angle * 16.0F)` If `angle` is integer use `= (int16_t)(angle << 4)`
+
     /* Step the controller */
-    #ifdef MOTOR_RIGHT_ENA
-    BLDC_controller_step(rtM_Right);
+    #ifdef MOTOR_ENA
+    BLDC_controller_step(rtM_Motor);
     #endif
 
     /* Get motor outputs here */
-    ur            = rtY_Right.DC_phaA;
-    vr            = rtY_Right.DC_phaB;
-    wr            = rtY_Right.DC_phaC;
+    u = rtY_Motor.DC_phaA;
+    v = rtY_Motor.DC_phaB;
+    w = rtY_Motor.DC_phaC;
     
     #ifdef BOARD_MASTER
-    errCode_Master = rtY_Right.z_errCode;
+    errCode_Master = rtY_Motor.z_errCode;
     #endif
     #ifdef BOARD_SLAVE
-    errCode_Slave = rtY_Right.z_errCode;
+    errCode_Slave = rtY_Motor.z_errCode;
     #endif
  
- // motSpeedRight = rtY_Right.n_mot;
- // motAngleRight = rtY_Right.a_elecAngle;
+ // motSpeedMotor = rtY_Motor.n_mot;
+ // motAngleMotor = rtY_Motor.a_elecAngle;
 
     /* Apply commands */
-    RIGHT_TIM->RIGHT_TIM_U  = (uint16_t)CLAMP(ur + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
-    RIGHT_TIM->RIGHT_TIM_V  = (uint16_t)CLAMP(vr + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
-    RIGHT_TIM->RIGHT_TIM_W  = (uint16_t)CLAMP(wr + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
+    MOTOR_TIM->MOTOR_TIM_U  = (uint16_t)CLAMP(u + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
+    MOTOR_TIM->MOTOR_TIM_V  = (uint16_t)CLAMP(v + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
+    MOTOR_TIM->MOTOR_TIM_W  = (uint16_t)CLAMP(w + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);
   // =================================================================
 
   /* Indicate task complete */

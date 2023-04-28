@@ -143,8 +143,7 @@
 #define TRQ_MODE        3               // [-] TORQUE mode
 
 // Enable/Disable Motor
-// #define MOTOR_LEFT_ENA                  // [-] Enable LEFT motor.  Comment-out if this motor is not needed to be operational
-#define MOTOR_RIGHT_ENA                 // [-] Enable RIGHT motor. Comment-out if this motor is not needed to be operational
+#define MOTOR_ENA                       // [-] Enable RIGHT motor. Comment-out if this motor is not needed to be operational
 
 // Control selections
 #define CTRL_TYP_SEL    FOC_CTRL        // [-] Control type selection: COM_CTRL, SIN_CTRL, FOC_CTRL (default)
@@ -312,14 +311,14 @@
 // ############################ VARIANT_USART SETTINGS ############################
 #ifdef VARIANT_USART
  
-  // #define DEBUG_SERIAL_USART1           // 
+  #define DEBUG_SERIAL_USART1           // 
  
   #ifdef BOARD_MASTER
   #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
   #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
 
   #define CONTROL_SERIAL_USART1  0    // ARDUINO  => MASTER  // check the hoverSerial.ino
-  #define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
+  //#define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
   #endif
 
   #ifdef BOARD_SLAVE
