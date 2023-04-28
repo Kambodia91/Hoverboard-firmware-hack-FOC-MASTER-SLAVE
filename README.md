@@ -1,7 +1,7 @@
 # Hoverboard firmware hack FOC MASTER/SLAVE (HOVER-1 RIVAL)
 ![HOVER-1](/docs/pictures/HOVERBOARD-HOVER-RIVAL-LED.jpg)
 
-This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. The boards communicate with each other via UART2, The motors are controlled via UART1 on the master board and Arduino. The left bldc motor was cut from the original program. 
+This repository implements Field Oriented Control (FOC) for hoverboards witch two boards Master and Slave. The boards communicate with each other via UART2, The motors are controlled via UART1 on the master board and Arduino. [Communication diagram](/docs/CommunicationDiagram) The left bldc motor was cut from the original program. 
 
 The software is being tested.! More info: https://github.com/EFeru/hoverboard-firmware-hack-FOC/issues/364
 
