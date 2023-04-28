@@ -41,8 +41,8 @@ void SystemClock_Config(void);
 //------------------------------------------------------------------------
 // Global variables set externally
 //------------------------------------------------------------------------
-extern TIM_HandleTypeDef htim_left;
-extern TIM_HandleTypeDef htim_right;
+extern TIM_HandleTypeDef htim_Adc;
+extern TIM_HandleTypeDef htim_Motor;
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 extern volatile adc_buf_t adc_buffer;
@@ -59,14 +59,11 @@ volatile uint8_t uart_buf[200];
 //------------------------------------------------------------------------
 // Matlab defines - from auto-code generation
 //------------------------------------------------------------------------
-extern P    rtP_Left;                           /* Block parameters (auto storage) */
-extern P    rtP_Right;                          /* Block parameters (auto storage) */
-extern ExtY rtY_Left;                           /* External outputs */
-extern ExtY rtY_Right;                          /* External outputs */
-extern ExtU rtU_Left;                           /* External inputs */
-extern ExtU rtU_Right;                          /* External inputs */
-//------------------------------------------------------------------------
+extern P    rtP_Motor;                          /* Block parameters (auto storage) */
+extern ExtY rtY_Motor;                          /* External outputs */
+extern ExtU rtU_Motor;                          /* External inputs */
 
+//------------------------------------------------------------------------
 extern uint8_t     inIdx;                       // input index used for dual-inputs
 extern uint8_t     inIdx_prev;
 extern InputStruct input1[];                    // input structure
@@ -79,7 +76,6 @@ extern volatile uint8_t  timeoutFlgGen;         // Timeout Flag for the General 
 extern uint8_t timeoutFlgADC;                   // Timeout Flag for for ADC Protection: 0 = OK, 1 = Problem detected (line disconnected or wrong ADC data)
 extern uint8_t timeoutFlgSerial;                // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 
-extern volatile int pwml;                       // global variable for pwm left. -1000 to 1000
 extern volatile int pwm;                        // global variable for pwm right. -1000 to 1000
 
 extern uint8_t enable;                          // global variable for motor enable
@@ -117,11 +113,11 @@ extern int16_t board_temp_deg_c_Master;         // global variable for calibrate
 extern int16_t board_temp_deg_c_Slave;          // global variable for calibrated temperature in degrees Celsius
 extern int16_t errCode_Master;
 extern int16_t errCode_Slave;
-int16_t left_dc_curr;                           // global variable for Left DC Link current 
-int16_t right_dc_curr;                          // global variable for Right DC Link current
+
+int16_t motor_dc_curr;                          // global variable for Right DC Link current
 int16_t dc_curr;                                // global variable for Total DC Link current 
-int16_t cmdMaster;                              // global variable for Left Command 
-int16_t cmdSlave;                               // global variable for Right Command 
+int16_t cmdMaster;                              // global variable for Master Command 
+int16_t cmdSlave;                               // global variable for Slave Command 
 
 //------------------------------------------------------------------------
 // Local variables
@@ -200,14 +196,18 @@ int main(void) {
   MX_ADC2_Init();
   BLDC_Init();        // BLDC Controller Init
 
+
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_SET);   // Activate Latch
   Input_Lim_Init();   // Input Limitations Init
   Input_Init();       // Input Init
+  HAL_Delay(100);
 
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
 
+
   poweronMelody();
+
 
   HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
   
@@ -219,20 +219,20 @@ int main(void) {
       drive_mode = 2;
       max_speed = MULTI_MODE_DRIVE_M3_MAX;
       rate = MULTI_MODE_DRIVE_M3_RATE;
-      rtP_Left.n_max = rtP_Right.n_max = MULTI_MODE_M3_N_MOT_MAX << 4;
-      rtP_Left.i_max = rtP_Right.i_max = (MULTI_MODE_M3_I_MOT_MAX * A2BIT_CONV) << 4;
+      rtP_Motor.n_max = MULTI_MODE_M3_N_MOT_MAX << 4;
+      rtP_Motor.i_max = (MULTI_MODE_M3_I_MOT_MAX * A2BIT_CONV) << 4;
     } else if (adc_buffer.l_tx2 > input1[0].min + 50) {
       drive_mode = 1;
       max_speed = MULTI_MODE_DRIVE_M2_MAX;
       rate = MULTI_MODE_DRIVE_M2_RATE;
-      rtP_Left.n_max = rtP_Right.n_max = MULTI_MODE_M2_N_MOT_MAX << 4;
-      rtP_Left.i_max = rtP_Right.i_max = (MULTI_MODE_M2_I_MOT_MAX * A2BIT_CONV) << 4;
+      rtP_Motor.n_max = MULTI_MODE_M2_N_MOT_MAX << 4;
+      rtP_Motor.i_max = (MULTI_MODE_M2_I_MOT_MAX * A2BIT_CONV) << 4;
     } else {
       drive_mode = 0;
       max_speed = MULTI_MODE_DRIVE_M1_MAX;
       rate = MULTI_MODE_DRIVE_M1_RATE;
-      rtP_Left.n_max = rtP_Right.n_max = MULTI_MODE_M1_N_MOT_MAX << 4;
-      rtP_Left.i_max = rtP_Right.i_max = (MULTI_MODE_M1_I_MOT_MAX * A2BIT_CONV) << 4;
+      rtP_Motor.n_max = MULTI_MODE_M1_N_MOT_MAX << 4;
+      rtP_Motor.i_max = (MULTI_MODE_M1_I_MOT_MAX * A2BIT_CONV) << 4;
     }
 
     printf("Drive mode %i selected: max_speed:%i acc_rate:%i \r\n", drive_mode, max_speed, rate);
@@ -283,7 +283,7 @@ int main(void) {
 
         if (input1[inIdx].cmd > 30) {                               // If Brake pedal (input1) is pressed, bring to 0 also the Throttle pedal (input2) to avoid "Double pedal" driving
           input2[inIdx].cmd = (int16_t)((input2[inIdx].cmd * speedBlend) >> 15);
-          cruiseControl((uint8_t)rtP_Left.b_cruiseCtrlEna);         // Cruise control deactivated by Brake pedal if it was active
+          cruiseControl((uint8_t)rtP_Motor.b_cruiseCtrlEna);         // Cruise control deactivated by Brake pedal if it was active
         }
       }
       #endif
@@ -483,9 +483,8 @@ int main(void) {
     #endif
 
     // ####### CALC DC LINK CURRENT #######
-    left_dc_curr  = -(rtU_Left.i_DCLink * 100) / A2BIT_CONV;   // Left DC Link Current * 100 
-    right_dc_curr = -(rtU_Right.i_DCLink * 100) / A2BIT_CONV;  // Right DC Link Current * 100
-    dc_curr       = left_dc_curr + right_dc_curr;            // Total DC Link Current * 100
+    motor_dc_curr = -(rtU_Motor.i_DCLink * 100) / A2BIT_CONV;  // Right DC Link Current * 100
+    dc_curr       = motor_dc_curr;            // Total DC Link Current * 100
 
     // ####### DEBUG SERIAL OUT #######
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
@@ -498,7 +497,7 @@ int main(void) {
             input2[inIdx].raw,        // 2: INPUT2
             cmdMaster,                // 3: output command: [-1000, 1000]
             cmdSlave,                 // 4: output command: [-1000, 1000]
-            adc_buffer.batt1,         // 5: for battery voltage calibration
+            adc_buffer.batt,         // 5: for battery voltage calibration
             batVoltageCalib,          // 6: for verifying battery voltage calibration
             board_temp_adcFilt,       // 7: for board temperature calibration
             board_temp_deg_c_Master,  // 8: for verifying board Master temperature calibration
@@ -541,7 +540,7 @@ int main(void) {
         printf("Powering off, battery voltage is too low\r\n");
       #endif
       poweroff();
-    } else if (errCode_Slave || errCode_Master) {                                           // 1 beep (low pitch): Motor error, disable motors
+    } else if (errCode_Slave || errCode_Master) {                                                     // 1 beep (low pitch): Motor error, disable motors
       enable = 0;
       beepCount(1, 24, 1);
     } else if (timeoutFlgADC) {                                                                       // 2 beeps (low pitch): ADC timeout
@@ -550,7 +549,7 @@ int main(void) {
       beepCount(3, 24, 1);
     } else if (timeoutFlgGen) {                                                                       // 4 beeps (low pitch): General timeout (PPM, PWM, Nunchuk)
       beepCount(4, 24, 1);
-    } else if (TEMP_WARNING_ENABLE && board_temp_deg_c_Master && board_temp_deg_c_Slave >= TEMP_WARNING) {                             // 5 beeps (low pitch): Mainboard temperature warning
+    } else if (TEMP_WARNING_ENABLE && board_temp_deg_c_Master && board_temp_deg_c_Slave >= TEMP_WARNING) { // 5 beeps (low pitch): Mainboard temperature warning
       beepCount(5, 24, 1);
     } else if (BAT_LVL1_ENABLE && batVoltage < BAT_LVL1) {                                            // 1 beep fast (medium pitch): Low bat 1
       beepCount(0, 10, 6);
@@ -573,8 +572,7 @@ int main(void) {
     }
 
     #if defined(CRUISE_CONTROL_SUPPORT) || defined(STANDSTILL_HOLD_ENABLE)
-      if ((abs(rtP_Left.n_cruiseMotTgt)  > 50 && rtP_Left.b_cruiseCtrlEna) || 
-          (abs(rtP_Right.n_cruiseMotTgt) > 50 && rtP_Right.b_cruiseCtrlEna)) {
+      if ((abs(rtP_Motor.n_cruiseMotTgt) > 50 && rtP_Motor.b_cruiseCtrlEna)) {
         inactivity_timeout_counter = 0;
       }
     #endif
