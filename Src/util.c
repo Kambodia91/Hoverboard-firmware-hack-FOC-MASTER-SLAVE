@@ -325,26 +325,24 @@ void Input_Init(void) {
   #if defined(CONTROL_PPM_LEFT) || defined(CONTROL_PPM_RIGHT)
     PPM_Init();
   #endif
-
  #if defined(CONTROL_PWM_LEFT) || defined(CONTROL_PWM_RIGHT)
     PWM_Init();
-  #endif
-
-  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
-    UART2_Init();
   #endif
   #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
     UART1_Init();
   #endif
-  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
-    HAL_UART_Receive_DMA(&huart2, (uint8_t *)rx_buffer_L, sizeof(rx_buffer_L));
-    UART_DisableRxErrors(&huart2);
+  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+    UART2_Init();
   #endif
   #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
     HAL_UART_Receive_DMA(&huart1, (uint8_t *)rx_buffer_R, sizeof(rx_buffer_R));
     UART_DisableRxErrors(&huart1);
   #endif
-
+  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+    HAL_UART_Receive_DMA(&huart2, (uint8_t *)rx_buffer_L, sizeof(rx_buffer_L));
+    UART_DisableRxErrors(&huart2);
+  // HAL_Delay(100);
+  #endif
   #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
     uint16_t writeCheck, readVal;
     HAL_FLASH_Unlock();
