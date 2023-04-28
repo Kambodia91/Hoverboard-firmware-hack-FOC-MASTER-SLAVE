@@ -311,14 +311,14 @@
 // ############################ VARIANT_USART SETTINGS ############################
 #ifdef VARIANT_USART
  
-  #define DEBUG_SERIAL_USART1           // 
+  // #define DEBUG_SERIAL_USART1           // 
  
   #ifdef BOARD_MASTER
   #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
   #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
 
   #define CONTROL_SERIAL_USART1  0    // ARDUINO  => MASTER  // check the hoverSerial.ino
-  //#define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
+  #define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
   #endif
 
   #ifdef BOARD_SLAVE
