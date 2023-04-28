@@ -200,7 +200,7 @@ int main(void) {
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_SET);   // Activate Latch
   Input_Lim_Init();   // Input Limitations Init
   Input_Init();       // Input Init
-  HAL_Delay(100);
+ 
 
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
