@@ -28,9 +28,11 @@
 #define HOVER_SERIAL_BAUD   115200      // [-] Baud rate for Serial2 (used to communicate with the hoverboard)
 #define SERIAL_BAUD         115200      // [-] Baud rate for built-in Serial (used for the Serial Monitor)
 #define START_FRAME         0xABCD     	// [-] Start frme definition for reliable serial communication
-#define TIME_SEND           20         // [ms] Sending time interval
+#define TIME_SEND           20          // [ms] Sending time interval
 #define SPEED_MAX_TEST      100         // [-] Maximum speed for testing
-#define SPEED_STEP          1          // [-] Speed step
+#define SPEED_STEP          1           // [-] Speed step
+#define CONTROL_MODE        1           // [-] 1-FOC_VOLTAGE, 2-FOC_SPEED, 3-FOC_TORQE, 4-SIN, 5-COMM,
+#define ENABLE_MOTOR        1           // [-] 0-Disable Motor, 1-Enable Motor
 // #define DEBUG_RX                        // [-] Debug received data. Prints all bytes to serial (comment-out to disable)
 #include <Arduino.h>
 // Global variables
@@ -43,6 +45,7 @@ byte incomingBytePrev;
 typedef struct{
    uint16_t start;
    int16_t  enableMotors;
+   int16_t  controlMode;
    int16_t  speedMaster;
    int16_t  speedSlave;
    uint16_t checksum;
@@ -78,11 +81,12 @@ void setup()
 }
 
 // ########################## SEND ##########################
-void Send(int16_t uEnableMotors, int16_t uSpeedMaster, int16_t uSpeedSlave)
+void Send(int16_t uEnableMotors, int16_t uControlMode, int16_t uSpeedMaster, int16_t uSpeedSlave)
 {
   // Create command
   Command.start           = (uint16_t)START_FRAME;    // Start Frame  
   Command.enableMotors    = (int16_t)uEnableMotors;   // ARDUINO  => MASTER HOVER.
+  Command.controlMode     = (int16_t)uControlMode;    // ARDUINO  => MASTER HOVER.
   Command.speedMaster     = (int16_t)uSpeedMaster;    // ARDUINO  => MASTER HOVER.
   Command.speedSlave      = (int16_t)uSpeedSlave;     // ARDUINO  => MASTER HOVER.
   Command.checksum        = (uint16_t)(Command.start ^ Command.enableMotors ^ Command.speedMaster ^ Command.speedSlave);
@@ -166,6 +170,7 @@ void Receive()
 // ########################## LOOP ##########################
 
 unsigned long iTimeSend = 0;
+int masterPWM, slavePWM;
 int iTest = 0;
 int iStep = SPEED_STEP;
 
@@ -179,7 +184,9 @@ void loop(void)
   // Send commands
   if (iTimeSend > timeNow) return;
   iTimeSend = timeNow + TIME_SEND;
-  Send(1, iTest, iTest);
+
+  masterPWM = slavePWM = iTest;
+  Send(ENABLE_MOTOR, CONTROL_MODE, masterPWM, slavePWM);
 
   // Calculate test command signal
   iTest += iStep;

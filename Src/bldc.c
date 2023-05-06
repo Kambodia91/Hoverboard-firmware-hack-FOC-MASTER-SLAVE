@@ -81,28 +81,29 @@ int16_t               batVoltage      = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_
 #ifdef BOARD_MASTER
 static int32_t        batVoltageFixdt = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE << 16;  // Fixed-point filter output initialized at 400 V*100/cell = 4 V/cell converted to fixed-point
 #endif
+
 // =================================
 // DMA interrupt frequency =~ 16 kHz
 // =================================
 void DMA1_Channel1_IRQHandler(void) {
-
   DMA1->IFCR = DMA_IFCR_CTCIF1;
-  // HAL_GPIO_WritePin(LED_PORT, LED_PIN, 1);
-  // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
-
-  if(offsetcount < 2000) {  // calibrate ADC offsets
+  
+  // calibrate ADC offsets
+  if(offsetcount < 2000) {  
     offsetcount++;
     offsetrB = (adc_buffer.curB + offsetrB) / 2;
     offsetrC = (adc_buffer.curC + offsetrC) / 2;
     offsetdc = (adc_buffer.curDc + offsetdc) / 2;
     return;
   }
-#ifdef BOARD_MASTER
+
+  #ifdef BOARD_MASTER
   if (buzzerTimer % 1000 == 0) {  // Filter battery voltage at a slower sampling rate
     filtLowPass32(adc_buffer.batt, BAT_FILT_COEF, &batVoltageFixdt);
     batVoltage = (int16_t)(batVoltageFixdt >> 16);  // convert fixed-point to integer
   }
-#endif
+  #endif
+
   // Get Motor currents
   cur_phaB = (int16_t)(offsetrB - adc_buffer.curB);
   cur_phaC = (int16_t)(offsetrC - adc_buffer.curC);
@@ -110,7 +111,7 @@ void DMA1_Channel1_IRQHandler(void) {
 
   // Disable PWM when current limit is reached (current chopping)
   // This is the Level 2 of current protection. The Level 1 should kick in first given by I_MOT_MAX
-  if(ABS(cur_DC)  > curDC_max || enable == 0 || enableMotors == 0 || chargeStatus == 1) {
+  if(ABS(cur_DC)  > curDC_max || enable == 0 || enableMotors == 0) {
     ADC_TIM->BDTR &= ~TIM_BDTR_MOE;
     MOTOR_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
@@ -158,15 +159,15 @@ void DMA1_Channel1_IRQHandler(void) {
   OverrunFlag = true;
 
   /* Make sure to stop motor in case of an error */
-  enableFin = enable && !errCode_Slave && !errCode_Master && enableMotors;
-    #ifdef BOARD_MASTER
-    enableFinMaster = enableFin;
-    #endif
-    #ifdef BOARD_SLAVE
-    enableFinSlave = enableFin;
-    #endif
+  enableFin = enable && !errCode_Slave && !errCode_Master && enableMotors && !chargeStatus;
+    
+  #ifdef BOARD_MASTER
+  enableFinMaster = enableFin;
+  #endif
+  #ifdef BOARD_SLAVE
+  enableFinSlave = enableFin;
+  #endif
   
-
   // ========================= MOTOR ===========================  
     // Get hall sensors values
     uint8_t hall_u = !(MOTOR_HALL_U_PORT->IDR & MOTOR_HALL_U_PIN);
@@ -202,8 +203,8 @@ void DMA1_Channel1_IRQHandler(void) {
     errCode_Slave = rtY_Motor.z_errCode;
     #endif
  
- // motSpeedMotor = rtY_Motor.n_mot;
- // motAngleMotor = rtY_Motor.a_elecAngle;
+    // motSpeedMotor = rtY_Motor.n_mot;
+    // motAngleMotor = rtY_Motor.a_elecAngle;
 
     /* Apply commands */
     MOTOR_TIM->MOTOR_TIM_U  = (uint16_t)CLAMP(u + pwm_res / 2, pwm_margin, pwm_res-pwm_margin);

@@ -38,6 +38,7 @@
     typedef struct{ // RECIVER - Master/Arduino
       uint16_t  start;          // 
       int16_t   enableMotors;   // Arduino  => Master
+      int16_t   controlMode;    // Arduino  => Master         => Slave
       int16_t   speedMaster;    // Arduino  => Master
       int16_t   speedSlave;     // Arduino  => Master         => Slave
       uint16_t  checksum;       // 
@@ -58,6 +59,7 @@
     typedef struct{ // RECIVER - Master/Slave
       uint16_t  start;          // 
       int16_t   enableMotors;   // Master   => Slave
+      int16_t   controlMode;    // Master   => Slave
       int16_t   speedMaster;    // Arduino  => Master
       int16_t   speedSlave;     // Master   => Slave
       int16_t   speedSlave_meas;// Slave    => Master         => Arduino
@@ -119,6 +121,7 @@ int  checkInputType(int16_t min, int16_t mid, int16_t max);
 void calcInputCmd(InputStruct *in, int16_t out_min, int16_t out_max);
 void readInputRaw(void);
 void handleTimeout(void);
+void handleControlMode(void);
 void readCommand(void);
 void usart1_rx_check(void);   // CHECK  // Master <=  Arduino.
 void usart1_tx_Send(void);    // SEND   // Master  => Arduino.

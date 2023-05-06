@@ -26,7 +26,7 @@
 
 // ############################### DO-NOT-TOUCH SETTINGS ###############################
 #define PWM_FREQ            16000     // PWM frequency in Hz / is also used for buzzer
-#define DEAD_TIME              48     // PWM deadtime
+#define DEAD_TIME              48     // PWM deadtime 48
 #ifdef VARIANT_TRANSPOTTER
   #define DELAY_IN_MAIN_LOOP    2
 #else
@@ -143,7 +143,7 @@
 #define TRQ_MODE        3               // [-] TORQUE mode
 
 // Enable/Disable Motor
-#define MOTOR_ENA                       // [-] Enable RIGHT motor. Comment-out if this motor is not needed to be operational
+#define MOTOR_ENA                       // [-] Enable motor. Comment-out if this motor is not needed to be operational
 
 // Control selections
 #define CTRL_TYP_SEL    FOC_CTRL        // [-] Control type selection: COM_CTRL, SIN_CTRL, FOC_CTRL (default)
@@ -284,7 +284,7 @@
 */
   #define CONTROL_ADC           0         // use ADC as input. Number indicates priority for dual-input. Disable CONTROL_SERIAL_USART2, FEEDBACK_SERIAL_USART2, DEBUG_SERIAL_USART2!
 
-  // #define DUAL_INPUTS                     //  ADC*(Primary) + UART(Auxiliary). Uncomment this to use Dual-inputs
+  #define DUAL_INPUTS                     //  ADC*(Primary) + UART(Auxiliary). Uncomment this to use Dual-inputs
   #define PRI_INPUT1            3, 0, 0, 4095, 0      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #define PRI_INPUT2            3, 0, 0, 4095, 0      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #ifdef DUAL_INPUTS
@@ -296,9 +296,12 @@
     #define AUX_INPUT2          3, -1000, 0, 1000, 0  // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #else
     #define FLASH_WRITE_KEY     0x1001    // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
-    #define DEBUG_SERIAL_USART1           // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
+    //#define DEBUG_SERIAL_USART1           // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
+    
   #endif
-
+  
+  #define CONTROL_SERIAL_USART2  0    // MASTER   => SLAVE
+  #define FEEDBACK_SERIAL_USART2      // SLAVE    => MASTER
   // #define TANK_STEERING                   // use for tank steering, each input controls each wheel 
   // #define ADC_ALTERNATE_CONNECT           // use to swap ADC inputs
   // #define SUPPORT_BUTTONS_LEFT            // use left sensor board cable for button inputs.  Disable DEBUG_SERIAL_USART2!
@@ -720,7 +723,7 @@
 
 // LEFT cable checks
 #if defined(CONTROL_ADC) && (defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
-  #error CONTROL_ADC and SERIAL_USART2 not allowed. It is on the same cable.
+  //#error CONTROL_ADC and SERIAL_USART2 not allowed. It is on the same cable.
 #endif
 
 #if defined(CONTROL_PPM_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))

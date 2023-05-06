@@ -112,13 +112,15 @@ int16_t errCode_Slave = 0;
 int16_t speedSlave_meas;                // SpeedL_meas from Slave.
 
 int16_t enableMotors;                   // Command enable motors from uart1
+int16_t controlMode;
 int16_t enableFinMaster;
 int16_t enableFinSlave;
 
 int16_t chargeStatus;                   // Status charge connection.
 
-uint8_t  ctrlModReqRaw = CTRL_MOD_REQ;
-uint8_t  ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
+int16_t controlMode;
+uint8_t ctrlModReqRaw = CTRL_MOD_REQ;
+uint8_t ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
 
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 LCD_PCF8574_HandleTypeDef lcd;
@@ -178,6 +180,7 @@ static SerialFeedback Feedback;
 typedef struct{
   uint16_t  start;          // Master/Slave
   int16_t   enableMotors;   // Master
+  int16_t   controlMode;    // Master/Slave
   int16_t   speedMaster;    // Master
   int16_t   speedSlave;     // Master
   int16_t   speedSlave_meas;// Slave
@@ -342,7 +345,7 @@ void Input_Init(void) {
     HAL_UART_Receive_DMA(&huart2, (uint8_t *)rx_buffer_L, sizeof(rx_buffer_L));
     UART_DisableRxErrors(&huart2);
   #endif
-  HAL_Delay(100); // Needed for normal operation.
+  HAL_Delay(500); // Needed for normal operation.
   #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
     uint16_t writeCheck, readVal;
     HAL_FLASH_Unlock();
@@ -867,8 +870,8 @@ void readInputRaw(void) {
         input1[inIdx].raw = adc_buffer.l_rx2;
         input2[inIdx].raw = adc_buffer.l_tx2;
       #else
-        input1[inIdx].raw = adc_buffer.l_tx2;
-        input2[inIdx].raw = adc_buffer.l_rx2;
+        input1[inIdx].raw = adc_buffer.AdcIn;
+        input2[inIdx].raw = adc_buffer.AdcIn;
       #endif
     }
     #endif
@@ -898,6 +901,7 @@ void readInputRaw(void) {
         // Message Master => Slave
         #ifdef BOARD_SLAVE                                            // RX UART2
         enableMotors              = commandL.enableMotors;            // BOARD SLAVE    <= Message enableMotors       <= BOARD MASTER.
+        controlMode               = commandL.controlMode;
         input1[inIdx].raw         = commandL.speedMaster;             // BOARD SLAVE    <= Message speedMaster        <= BOARD MASTER.
         input2[inIdx].raw         = commandL.speedSlave;              // BOARD SLAVE    <= Message speedSlave         <= BOARD MASTER.              
         batVoltageCalib           = commandL.bateryVoltage;           // BOARD SLAVE    <= Message bateryVoltage      <= BOARD MASTER.
@@ -925,6 +929,7 @@ void readInputRaw(void) {
         input2[inIdx].raw = (ibusR_captured_value[1] - 500) * 2; 
       #else                                                   // RX UART2
         enableMotors              = commandR.enableMotors;            // ARDUINO      => Message enableMotors     => BOARD MASTER.
+        controlMode               = commandR.controlMode;             // ARDUINO      => Message controlMode      => BOARD MASTER.
         input1[inIdx].raw         = commandR.speedMaster;             // ARDUINO      => Message speedMaster      => BOARD MASTER.
         input2[inIdx].raw         = commandR.speedSlave;              // ARDUINO      => Message speedSlave       => BOARD MASTER.
       #endif
@@ -1094,6 +1099,38 @@ void handleTimeout(void) {
       beepShort(18);
     }
 }
+
+void handleControlMode(void) {
+  // Control MODE and Control Type Handling
+      switch (controlMode) {
+        case 1:     // FOC VOLTAGE
+          rtP_Motor.z_ctrlTypSel  = FOC_CTRL;
+          ctrlModReqRaw           = VLT_MODE;
+          break;
+        case 2:     // FOC SPEED
+          rtP_Motor.z_ctrlTypSel  = FOC_CTRL;
+          ctrlModReqRaw           = SPD_MODE;
+          break;
+        case 3:     // FOC TORQUE
+          rtP_Motor.z_ctrlTypSel  = FOC_CTRL;
+          ctrlModReqRaw           = TRQ_MODE;
+          break;
+        case 4:     // SINUSOIDAL
+          rtP_Motor.z_ctrlTypSel  = SIN_CTRL;
+          break;
+        case 5:     // COMMUTATION
+          rtP_Motor.z_ctrlTypSel  = COM_CTRL;
+          break;
+        default:
+          input1[inIdx].cmd       = 0;
+          input2[inIdx].cmd       = 0;
+          break;
+      }
+      // if (inIdx == inIdx_prev) { beepShortMany(sensor1_index + 1, 1); }
+      // if (++sensor1_index > 4) { sensor1_index = 0; }
+    
+}
+
 
  /*
  * Function to calculate the command to the motors. This function also manages:
@@ -1325,6 +1362,7 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
   if (command_in->start == SERIAL_START_FRAME) {
     checksum = (uint16_t)(command_in->start ^ 
                           command_in->enableMotors ^ 
+                          command_in->controlMode ^ 
                           command_in->speedMaster ^ 
                           command_in->speedSlave);
     
@@ -1371,6 +1409,7 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
   if (command_in->start == SERIAL_START_FRAME) {
     checksum = (uint16_t)(command_in->start ^ 
                           command_in->enableMotors ^ 
+                          command_in->controlMode ^ 
                           command_in->speedMaster ^ 
                           command_in->speedSlave ^ 
                           command_in->speedSlave_meas ^ 
@@ -1461,6 +1500,7 @@ void usart2_tx_Send(void)
   #ifdef BOARD_MASTER
     Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
     Send_Usart2.enableMotors      = (int16_t)enableMotors;              // MASTER   => enableMotors      => SLAVE.
+    Send_Usart2.controlMode       = (int16_t)controlMode;               // MASTER   => controlMode       => SLAVE.
     Send_Usart2.speedMaster       = (int16_t)0U;                        // MASTER   => speedMaster       => SLAVE.
     Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
     Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas  <=> SLAVE.
@@ -1474,6 +1514,7 @@ void usart2_tx_Send(void)
   #ifdef BOARD_SLAVE
     Send_Usart2.start	            = (uint16_t)SERIAL_START_FRAME;
     Send_Usart2.enableMotors      = (int16_t)0U;                        // SLAVE    => enableMotors      => MASTER.
+    Send_Usart2.controlMode       = (int16_t)0U;                        // SLAVE    => controlMode       => MASTER.
     Send_Usart2.speedMaster       = (int16_t)0U;                        // SLAVE    => speedMaster       => MASTER.
     Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
     Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Motor.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
@@ -1486,7 +1527,8 @@ void usart2_tx_Send(void)
         
   if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
     Send_Usart2.checksum   = (uint16_t)(Send_Usart2.start ^ 
-                                        Send_Usart2.enableMotors ^ 
+                                        Send_Usart2.enableMotors ^
+                                        Send_Usart2.controlMode ^ 
                                         Send_Usart2.speedMaster ^ 
                                         Send_Usart2.speedSlave ^ 
                                         Send_Usart2.speedSlave_meas ^ 
