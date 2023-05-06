@@ -251,7 +251,8 @@ int main(void) {
 
     readCommand();                        // Read Command: input1[inIdx].cmd, input2[inIdx].cmd
     calcAvgSpeed();                       // Calculate average measured speed: speedAvg, speedAvgAbs
-
+    handleControlMode();                  // Control MODE and Control Type Handling
+    
     #ifndef VARIANT_TRANSPOTTER
       // ####### MOTOR ENABLING: Only if the initial input is very small (for SAFETY) #######
       if (enable == 0 && !errCode_Slave && !errCode_Master && 
@@ -508,7 +509,7 @@ int main(void) {
       }
     #endif
 
-    // ####### FEEDBACK SERIAL OUT #######
+    // ####### UART SERIAL OUT #######
     #if defined(FEEDBACK_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART1)
       if (main_loop_counter % 2 == 0) {    // Send data periodically every 10 ms
          #if defined(FEEDBACK_SERIAL_USART1)
@@ -526,6 +527,7 @@ int main(void) {
     #ifdef BOARD_MASTER
     chargeCheck();
     #endif
+    
     // ####### POWEROFF BY POWER-BUTTON #######
     poweroffPressCheck();
 
