@@ -2,6 +2,7 @@
 || UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
 || BOARD     |  Command:          || BOARD    |  Command:          || BOARD ||
 || ARDUINO   => StartFrame        => MASTER   => StartFrame        => SLAVE ||
+|| ARDUINO   => ControlMode       => MASTER   => controlMode       => SLAVE ||
 || ARDUINO   => EnableMotors      => MASTER   => enableMotors      => SLAVE ||
 || ARDUINO   => SpeedMaster       => MASTER   => speedMaster       => SLAVE ||
 || ARDUINO   => SpeedSlave        => MASTER   => speedSlave        => SLAVE ||
@@ -16,6 +17,7 @@
 || UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
 || BOARD     | Command:           || BOARD    |   Command:         || BOARD ||
 || ARDUINO  <= StartFrame        <=  MASTER    <= StartFrame       <= SLAVE ||
+                                     MASTER    <= controlMode      <= SLAVE ||
 || ARDUINO  <= cmd1              <=  MASTER    <= speedMaster      <= SLAVE ||
 || ARDUINO  <= cmd2              <=  MASTER    <= speedSlave       <= SLAVE ||
 || ARDUINO  <= speedR_meas       <=  MASTER                                 ||  
