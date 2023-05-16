@@ -1126,8 +1126,8 @@ void handleControlMode(void) {
           input2[inIdx].cmd       = 0;
           break;
       }
-      // if (inIdx == inIdx_prev) { beepShortMany(sensor1_index + 1, 1); }
-      // if (++sensor1_index > 4) { sensor1_index = 0; }
+      //if (inIdx == inIdx_prev) { beepShortMany(controlMode, 1); }
+     // if (++sensor1_index > 4) { sensor1_index = 0; }
     
 }
 
