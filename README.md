@@ -9,6 +9,7 @@ The software is being tested.! More info: https://github.com/EFeru/hoverboard-fi
 YOUTUBE:
 - [Test communication usart1 with esp32, blynkAPP](https://youtu.be/ViJhMbIGTzU).
 - [Test safety communication](https://youtu.be/5jPmf3Z_Q6c).
+- [Driving test 2 rear wheels](https://youtu.be/ALolYnv8E9s).
 ---
 
 Compared to the commutation method, this new FOC control method offers superior performance featuring:
