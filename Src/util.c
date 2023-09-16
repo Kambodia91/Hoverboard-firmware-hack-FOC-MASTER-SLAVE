@@ -1128,7 +1128,16 @@ void handleControlMode(void) {
       }
       //if (inIdx == inIdx_prev) { beepShortMany(controlMode, 1); }
      // if (++sensor1_index > 4) { sensor1_index = 0; }
-    
+    // if(HAL_GPIO_ReadPin(MOTOR_HALL_U_PORT, MOTOR_HALL_U_PIN)) { 
+    //     HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, RESET);
+    //   } else {
+    //     HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, SET);
+    //   }
+    // if(HAL_GPIO_ReadPin(MOTOR_HALL_W_PORT, MOTOR_HALL_W_PIN)) { 
+    //     HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, RESET);
+    // } else {
+    //     HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, SET);
+    // }
 }
 
 

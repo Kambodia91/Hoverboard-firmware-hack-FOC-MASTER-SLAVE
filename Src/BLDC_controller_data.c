@@ -192,9 +192,9 @@ P rtP_Motor = {
   9600U,
 
   /* Variable: t_errQual
-   * Referenced by: '<S20>/t_errQual'
+   * Referenced by: '<S20>/t_errQual'                          1280U -> 9600U 
    */
-  1280U,
+  9600U,
 
   /* Variable: Vd_max
    * Referenced by:
@@ -269,9 +269,9 @@ P rtP_Motor = {
   48,
 
   /* Variable: r_errInpTgtThres
-   * Referenced by: '<S20>/r_errInpTgtThres'
+   * Referenced by: '<S20>/r_errInpTgtThres'                 9600 -> 16000
    */
-  9600,
+  16000,
 
   /* Variable: r_fieldWeakHi
    * Referenced by: '<S42>/r_fieldWeakHi'

@@ -34,26 +34,11 @@
 #define MOTOR_HALL_V_PORT   GPIOA
 #define MOTOR_HALL_W_PORT   GPIOA
 
-// TIM3
+// TIM3 FOR ADC
 
 #define ADC_TIM            TIM3                            // TIM3
-#define ADC_TIM_U          CCR1
-// #define ADC_TIM_UH_PIN GPIO_PIN_6
-// #define ADC_TIM_UH_PORT GPIOC
-// #define ADC_TIM_UL_PIN GPIO_PIN_7
-// #define ADC_TIM_UL_PORT GPIOA
-#define ADC_TIM_V          CCR2
-// #define ADC_TIM_VH_PIN GPIO_PIN_7
-// #define ADC_TIM_VH_PORT GPIOC
-// #define ADC_TIM_VL_PIN GPIO_PIN_0
-// #define ADC_TIM_VL_PORT GPIOB
-#define ADC_TIM_W          CCR3
-// #define ADC_TIM_WH_PIN GPIO_PIN_8
-// #define ADC_TIM_WH_PORT GPIOC
-// #define ADC_TIM_WL_PIN GPIO_PIN_1
-// #define ADC_TIM_WL_PORT GPIOB
 
-// TIM1 OUTPUT
+// TIM1 OUTPUT FOR MOTOR
 
 #define MOTOR_TIM           TIM1                            // TIM1
 #define MOTOR_TIM_U         CCR1                            // Phase 1 (Yellow)
@@ -81,9 +66,9 @@
 
 #define MOTOR_DC_CUR_PIN    GPIO_PIN_5                        // DC Current 
 #define MOTOR_DC_CUR_PORT   GPIOA
-#define MOTOR_U_CUR_PIN     GPIO_PIN_0                        // Phase B Current 
+#define MOTOR_U_CUR_PIN     GPIO_PIN_0                        // Phase B Current (Yellow Phase)
 #define MOTOR_U_CUR_PORT    GPIOA
-#define MOTOR_V_CUR_PIN     GPIO_PIN_1                        // Phase C Current 
+#define MOTOR_V_CUR_PIN     GPIO_PIN_1                        // Phase C Current (Green Phase)
 #define MOTOR_V_CUR_PORT    GPIOA
 #define MOTOR_TEMP_PIN      GPIO_PIN_1                        // White wire from wheel
 #define MOTOR_TEMP_PORT     GPIOB

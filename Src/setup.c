@@ -417,7 +417,7 @@ void MX_TIM_Init(void) {
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_ENABLE;
   sBreakDeadTimeConfig.LockLevel        = TIM_LOCKLEVEL_OFF;
   sBreakDeadTimeConfig.DeadTime         = DEAD_TIME;
-  sBreakDeadTimeConfig.BreakState       = TIM_BREAK_ENABLE;             // PB12 EMERGENCY STOP 
+  sBreakDeadTimeConfig.BreakState       = TIM_BREAK_DISABLE;            // PB12 EXTERNAL EMERGENCY STOP 
   sBreakDeadTimeConfig.BreakPolarity    = TIM_BREAKPOLARITY_LOW;        // PB12 Active Low
   sBreakDeadTimeConfig.AutomaticOutput  = TIM_AUTOMATICOUTPUT_DISABLE;
   HAL_TIMEx_ConfigBreakDeadTime(&htim_Motor, &sBreakDeadTimeConfig);

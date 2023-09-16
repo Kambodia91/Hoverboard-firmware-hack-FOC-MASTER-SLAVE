@@ -61,8 +61,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-// #define BOARD_MASTER                      // board master 
-#define BOARD_SLAVE                       // board slave
+#define BOARD_MASTER                      // board master 
+// #define BOARD_SLAVE                       // board slave
 
 // ######################## END OF BOARD VARIANT ###############################
 
@@ -151,8 +151,8 @@
 #define DIAG_ENA        1               // [-] Motor Diagnostics enable flag: 0 = Disabled, 1 = Enabled (default)
 
 // Limitation settings
-#define I_MOT_MAX       15              // [A] Maximum single motor current limit
-#define I_DC_MAX        17              // [A] Maximum stage2 DC Link current limit for Commutation and Sinusoidal types (This is the final current protection. Above this value, current chopping is applied. To avoid this make sure that I_DC_MAX = I_MOT_MAX + 2A)
+#define I_MOT_MAX       20              // [A] Maximum single motor current limit
+#define I_DC_MAX        22              // [A] Maximum stage2 DC Link current limit for Commutation and Sinusoidal types (This is the final current protection. Above this value, current chopping is applied. To avoid this make sure that I_DC_MAX = I_MOT_MAX + 2A)
 #define N_MOT_MAX       1000            // [rpm] Maximum motor speed limit
 
 // Field Weakening / Phase Advance
@@ -688,6 +688,10 @@
 
 
 // General checks
+#if defined(BOARD_SLAVE) && defined(BOARD_MASTER)
+  #error BOARD_SLAVE and BOARD_MASTER not allowed, choose one.
+#endif
+
 #if defined(CONTROL_SERIAL_USART2) && defined(SIDEBOARD_SERIAL_USART2)
   #error CONTROL_SERIAL_USART2 and SIDEBOARD_SERIAL_USART2 not allowed, choose one.
 #endif
