@@ -239,7 +239,9 @@ int main(void) {
   #endif
 
   // Loop until button is released
+  #ifdef BOARD_MASTER
   while(HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) { HAL_Delay(10); }
+  #endif
 
   #ifdef MULTI_MODE_DRIVE
     // Wait until triggers are released
@@ -257,8 +259,10 @@ int main(void) {
       // ####### MOTOR ENABLING: Only if the initial input is very small (for SAFETY) #######
       if (enable == 0 && !errCode_Slave && !errCode_Master && 
           ABS(input1[inIdx].cmd) < 50 && ABS(input2[inIdx].cmd) < 50){
-        beepShort(6);                     // make 2 beeps indicating the motor enable
-        beepShort(4); HAL_Delay(100);
+        #ifdef BOARD_MASTER
+          beepShort(6);                     // make 2 beeps indicating the motor enable
+          beepShort(4); HAL_Delay(100);
+        #endif
         speedMasterFixdt = speedSlaveFixdt = 0;      // reset filters
         enable = 1;                       // enable motors
         #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
@@ -529,8 +533,9 @@ int main(void) {
     #endif
     
     // ####### POWEROFF BY POWER-BUTTON #######
+    #ifdef BOARD_MASTER
     poweroffPressCheck();
-
+    #endif
     // ####### BEEP AND EMERGENCY POWEROFF #######
     if (TEMP_POWEROFF_ENABLE && board_temp_deg_c_Master && board_temp_deg_c_Slave  >= TEMP_POWEROFF && speedAvgAbs < 20){  // poweroff before mainboard burns OR low bat 3
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)

@@ -115,7 +115,7 @@ int16_t enableMotors;                   // Command enable motors from uart1
 int16_t controlMode;
 int16_t enableFinMaster;
 int16_t enableFinSlave;
-
+int countTest;
 int16_t chargeStatus;                   // Status charge connection.
 
 int16_t controlMode;
@@ -1514,9 +1514,9 @@ void usart2_tx_Send(void)
     Send_Usart2.speedSlave        = (int16_t)input2[inIdx].cmd;         // MASTER   => speedSlave        => SLAVE.
     Send_Usart2.speedSlave_meas   = (int16_t)0U;                        // MASTER   => speedSlave_meas  <=> SLAVE.
     Send_Usart2.bateryVoltage	    = (int16_t)batVoltageCalib;           // MASTER   => bateryVoltage     => SLAVE.
+    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Master;   // MASTER   => boardTemp        <=> SLAVE.
     Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
-    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Master;   // MASTER   => boardTemp        <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
   #endif
   //USART2 SLAVE => MASTER//
@@ -1528,9 +1528,9 @@ void usart2_tx_Send(void)
     Send_Usart2.speedSlave        = (int16_t)0U;                        // SLAVE    => speedSlave        => MASTER.
     Send_Usart2.speedSlave_meas   = (int16_t)-rtY_Motor.n_mot;          // SLAVE    => speedSlave_meas   => MASTER.
     Send_Usart2.bateryVoltage	    = (int16_t)0U;                        // SLAVE    => bateryVoltage     => MASTER.
+    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Slave;    // SLAVE    => boardTemp         => MASTER.
     Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // SLAVE    => errCode           => MASTER.
     Send_Usart2.enableFin         = (int16_t)enableFinSlave;            // MASTER   => enableFinSlave   <=> SLAVE.
-    Send_Usart2.boardTemp         = (int16_t)board_temp_deg_c_Slave;    // SLAVE    => boardTemp         => MASTER.
     Send_Usart2.chargeStatus      = (int16_t)0U;                        // SLAVE    => ChargeStatus      => MASTER.
   #endif
         
@@ -1542,8 +1542,8 @@ void usart2_tx_Send(void)
                                         Send_Usart2.speedSlave ^ 
                                         Send_Usart2.speedSlave_meas ^ 
                                         Send_Usart2.bateryVoltage ^
-                                        Send_Usart2.errCode ^ 
                                         Send_Usart2.boardTemp ^
+                                        Send_Usart2.errCode ^ 
                                         Send_Usart2.enableFin ^
                                         Send_Usart2.chargeStatus);
     // TR USART2

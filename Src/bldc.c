@@ -89,7 +89,7 @@ void DMA1_Channel1_IRQHandler(void) {
   DMA1->IFCR = DMA_IFCR_CTCIF1;
   
   // calibrate ADC offsets
-  if(offsetcount < 2000) {  
+  if(offsetcount < 4000) {  
     offsetcount++;
     offsetrB = (adc_buffer.curB + offsetrB) / 2;
     offsetrC = (adc_buffer.curC + offsetrC) / 2;
@@ -112,10 +112,10 @@ void DMA1_Channel1_IRQHandler(void) {
   // Disable PWM when current limit is reached (current chopping)
   // This is the Level 2 of current protection. The Level 1 should kick in first given by I_MOT_MAX
   if(ABS(cur_DC)  > curDC_max || enable == 0 || enableMotors == 0) {
-    ADC_TIM->BDTR &= ~TIM_BDTR_MOE;
+    //ADC_TIM->BDTR &= ~TIM_BDTR_MOE;
     MOTOR_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
-    ADC_TIM->BDTR |= TIM_BDTR_MOE;
+    //ADC_TIM->BDTR |= TIM_BDTR_MOE;
     MOTOR_TIM->BDTR |= TIM_BDTR_MOE;
   }
 
