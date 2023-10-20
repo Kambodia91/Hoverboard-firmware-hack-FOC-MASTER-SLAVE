@@ -10,6 +10,8 @@ YOUTUBE:
 - [Test communication usart1 with esp32, blynkAPP](https://youtu.be/ViJhMbIGTzU).
 - [Test safety communication](https://youtu.be/5jPmf3Z_Q6c).
 - [Driving test 2 rear wheels](https://youtu.be/ALolYnv8E9s).
+- [Driving test 01 4x4 new wheels](https://youtu.be/f5kqq9XtkOA?si=Ek2Kk6Emhx_Iep77).
+- [Driving test 02 4x4 new wheels](https://youtu.be/5k37qx_ut7Y?si=PjrUhJfBA4WDzB2Y).
 ---
 
 Compared to the commutation method, this new FOC control method offers superior performance featuring:
