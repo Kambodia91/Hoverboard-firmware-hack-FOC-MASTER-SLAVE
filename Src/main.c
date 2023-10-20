@@ -502,7 +502,7 @@ int main(void) {
             input2[inIdx].raw,        // 2: INPUT2
             cmdMaster,                // 3: output command: [-1000, 1000]
             cmdSlave,                 // 4: output command: [-1000, 1000]
-            adc_buffer.batt,         // 5: for battery voltage calibration
+            adc_buffer.batt,          // 5: for battery voltage calibration
             batVoltageCalib,          // 6: for verifying battery voltage calibration
             board_temp_adcFilt,       // 7: for board temperature calibration
             board_temp_deg_c_Master,  // 8: for verifying board Master temperature calibration
