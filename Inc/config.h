@@ -11,7 +11,7 @@
 // or use VARIANT environment variable for example like "make -e VARIANT=VARIANT_NUNCHUK". Select only one at a time.
 #if !defined(PLATFORMIO)
   //#define VARIANT_ADC         // Variant for control via ADC input
-  #define VARIANT_USART       // Variant for Serial control via USART1 input
+  //#define VARIANT_USART       // Variant for Serial control via USART1 input
   //#define VARIANT_NUNCHUK     // Variant for Nunchuk controlled vehicle build
   //#define VARIANT_PPM         // Variant for RC-Remote with PPM-Sum Signal
   //#define VARIANT_PWM         // Variant for RC-Remote with PWM Signal
@@ -61,8 +61,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-#define BOARD_MASTER                      // board master 
-// #define BOARD_SLAVE                       // board slave
+// #define BOARD_MASTER                      // board master 
+#define BOARD_SLAVE                       // board slave
 
 // ######################## END OF BOARD VARIANT ###############################
 
@@ -259,6 +259,9 @@
 // #define DEBUG_I2C_LCD                // standard 16x2 or larger text-lcd via i2c-converter on right sensor board cable
 // ########################### END OF DEBUG LCD ############################
 
+// ############################# BUZZER ENABLE / DISABLE #############################
+#define BUZZER_ENABLED               // If enabled the buzzer will buzz, otherwise not.
+// ######################### END OF BUZZER ENABLE / DISABLE ##########################
 
 
 // ################################# VARIANT_ADC SETTINGS ############################
@@ -332,9 +335,9 @@
   #define PRI_INPUT1             3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #define PRI_INPUT2             3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
 
-  #define FLASH_WRITE_KEY      0x1004  // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
+  #define FLASH_WRITE_KEY      0x1002 // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
 
-  #define TANK_STEERING              // use for tank steering, each input controls each wheel 
+  #define TANK_STEERING               // use for tank steering, each input controls each wheel 
 
 #endif
 // ######################## END OF VARIANT_USART SETTINGS #########################
