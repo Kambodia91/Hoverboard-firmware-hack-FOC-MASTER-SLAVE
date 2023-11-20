@@ -12,6 +12,8 @@ YOUTUBE:
 - [Driving test 2 rear wheels](https://youtu.be/ALolYnv8E9s).
 - [Driving test 01 4x4 new wheels](https://youtu.be/f5kqq9XtkOA?si=Ek2Kk6Emhx_Iep77).
 - [Driving test 02 4x4 new wheels](https://youtu.be/5k37qx_ut7Y?si=PjrUhJfBA4WDzB2Y).
+- [Cuttint height adjustment](https://youtu.be/1qUQQXA1uOE?si=6t5uq69G1FAZiTjl).
+
 ---
 
 Compared to the commutation method, this new FOC control method offers superior performance featuring:
