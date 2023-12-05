@@ -234,8 +234,9 @@ int main(void) {
       rtP_Motor.n_max = MULTI_MODE_M1_N_MOT_MAX << 4;
       rtP_Motor.i_max = (MULTI_MODE_M1_I_MOT_MAX * A2BIT_CONV) << 4;
     }
-
+    #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
     printf("Drive mode %i selected: max_speed:%i acc_rate:%i \r\n", drive_mode, max_speed, rate);
+    #endif
   #endif
 
   // Loop until button is released

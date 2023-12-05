@@ -368,9 +368,11 @@ void Input_Init(void) {
         EE_ReadVariable(VirtAddVarTab[ 9+8*i] , &readVal); input2[i].mid = (int16_t)readVal;
         EE_ReadVariable(VirtAddVarTab[10+8*i] , &readVal); input2[i].max = (int16_t)readVal;
       
-        printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
+        #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
+          printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
           input1[i].typ, input1[i].min, input1[i].mid, input1[i].max,
           input2[i].typ, input2[i].min, input2[i].mid, input2[i].max);
+        #endif
       }
     } else {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
@@ -388,9 +390,11 @@ void Input_Init(void) {
         } else {
           input2[i].typ = input2[i].typDef;
         }
-        printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
+        #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
+          printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
           input1[i].typ, input1[i].min, input1[i].mid, input1[i].max,
           input2[i].typ, input2[i].min, input2[i].mid, input2[i].max);
+        #endif
       }
     }
     HAL_FLASH_Lock();
