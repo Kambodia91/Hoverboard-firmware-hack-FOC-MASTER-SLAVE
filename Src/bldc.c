@@ -57,8 +57,10 @@ uint8_t               buzzerFreq      = 0;
 uint8_t               buzzerPattern   = 0;
 uint8_t               buzzerCount     = 0;
 volatile uint32_t     buzzerTimer     = 0;
+#if defined BUZZER_ENABLED && defined BOARD_MASTER
 static uint8_t        buzzerPrev      = 0;
 static uint8_t        buzzerIdx       = 0;
+#endif
 
 int16_t               errCode_Master;
 int16_t               errCode_Slave;

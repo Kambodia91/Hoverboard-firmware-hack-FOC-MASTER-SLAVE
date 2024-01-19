@@ -61,8 +61,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-// #define BOARD_MASTER                      // board master 
-#define BOARD_SLAVE                       // board slave
+#define BOARD_MASTER                      // board master 
+// #define BOARD_SLAVE                       // board slave
 
 // ######################## END OF BOARD VARIANT ###############################
 
@@ -260,7 +260,7 @@
 // ########################### END OF DEBUG LCD ############################
 
 // ############################# BUZZER ENABLE / DISABLE #############################
-#define BUZZER_ENABLED               // If enabled the buzzer will buzz, otherwise not.
+// #define BUZZER_ENABLED               // If enabled the buzzer will buzz, otherwise not.
 // ######################### END OF BUZZER ENABLE / DISABLE ##########################
 
 

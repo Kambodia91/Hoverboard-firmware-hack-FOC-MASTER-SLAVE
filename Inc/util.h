@@ -74,7 +74,7 @@
 #endif
 
 #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
-    typedef struct{
+    typedef struct {
       uint16_t  start;
       int16_t   pitch;      // Angle
       int16_t   dPitch;     // Angle derivative

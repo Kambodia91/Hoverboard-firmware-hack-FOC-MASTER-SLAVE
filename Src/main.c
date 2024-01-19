@@ -196,8 +196,9 @@ int main(void) {
   MX_ADC2_Init();
   BLDC_Init();        // BLDC Controller Init
 
-
+  #if defined BOARD_MASTER
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_SET);   // Activate Latch
+  #endif
   Input_Lim_Init();   // Input Limitations Init
   Input_Init();       // Input Init
  
@@ -589,7 +590,7 @@ int main(void) {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Powering off, wheels were inactive for too long\r\n");
       #endif
-      poweroff();
+      //poweroff();
     }
 
 
