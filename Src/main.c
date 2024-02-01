@@ -196,7 +196,7 @@ int main(void) {
   MX_ADC2_Init();
   BLDC_Init();        // BLDC Controller Init
 
-  #if defined BOARD_MASTER
+  #if defined BOARD_MASTER || defined SINGLE_MASTER
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_SET);   // Activate Latch
   #endif
   Input_Lim_Init();   // Input Limitations Init
@@ -241,7 +241,7 @@ int main(void) {
   #endif
 
   // Loop until button is released
-  #ifdef BOARD_MASTER
+  #if defined BOARD_MASTER || defined SINGLE_MASTER
   while(HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) { HAL_Delay(10); }
   #endif
 
@@ -261,7 +261,7 @@ int main(void) {
       // ####### MOTOR ENABLING: Only if the initial input is very small (for SAFETY) #######
       if (enable == 0 && !errCode_Slave && !errCode_Master && 
           ABS(input1[inIdx].cmd) < 50 && ABS(input2[inIdx].cmd) < 50){
-        #ifdef BOARD_MASTER
+        #if defined BOARD_MASTER || defined SINGLE_MASTER
           beepShort(6);                     // make 2 beeps indicating the motor enable
           beepShort(4); HAL_Delay(100);
         #endif
@@ -358,7 +358,7 @@ int main(void) {
 
       // ####### SET OUTPUTS (if the target change is less than +/- 100) #######
       #endif
-      #ifdef BOARD_MASTER
+      #if defined BOARD_MASTER || defined SINGLE_MASTER
         pwm = cmdMaster;
       #endif
       #ifdef BOARD_SLAVE
@@ -477,7 +477,7 @@ int main(void) {
     // ####### CALC BOARD TEMPERATURE #######
     filtLowPass32(adc_buffer.temp, TEMP_FILT_COEF, &board_temp_adcFixdt);
     board_temp_adcFilt  = (int16_t)(board_temp_adcFixdt >> 16);  // convert fixed-point to integer
-    #ifdef BOARD_MASTER
+    #if defined BOARD_MASTER || defined SINGLE_MASTER
     board_temp_deg_c_Master     = (TEMP_CAL_HIGH_DEG_C - TEMP_CAL_LOW_DEG_C) * (board_temp_adcFilt - TEMP_CAL_LOW_ADC) / (TEMP_CAL_HIGH_ADC - TEMP_CAL_LOW_ADC) + TEMP_CAL_LOW_DEG_C;
     #endif
     #ifdef BOARD_SLAVE
@@ -485,7 +485,7 @@ int main(void) {
     #endif
 
     // ####### CALC CALIBRATED BATTERY VOLTAGE #######
-    #ifdef BOARD_MASTER
+    #if defined BOARD_MASTER || defined SINGLE_MASTER
     batVoltageCalib = batVoltage * BAT_CALIB_REAL_VOLTAGE / BAT_CALIB_ADC;
     #endif
 
@@ -530,12 +530,12 @@ int main(void) {
     #endif
 
     // ####### CHARGE PORT CHECK #######
-    #ifdef BOARD_MASTER
+    #if defined BOARD_MASTER || defined SINGLE_MASTER
     chargeCheck();
     #endif
     
     // ####### POWEROFF BY POWER-BUTTON #######
-    #ifdef BOARD_MASTER
+    #if defined BOARD_MASTER || defined SINGLE_MASTER
     poweroffPressCheck();
     #endif
     // ####### BEEP AND EMERGENCY POWEROFF #######

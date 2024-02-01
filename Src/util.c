@@ -1773,8 +1773,9 @@ void saveConfig() {
 void poweroff(void) {
   enable = 0;
   enableMotors = 0;
-  usart2_tx_Send();
-
+  #ifndef SINGLE_MASTER
+    usart2_tx_Send();
+  #endif
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
   printf("-- Motors disabled --\r\n");
   #endif

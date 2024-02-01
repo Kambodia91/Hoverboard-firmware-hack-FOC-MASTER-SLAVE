@@ -307,14 +307,14 @@ void MX_GPIO_Init(void) {
 
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   
-  #ifdef BOARD_MASTER
+  #if defined BOARD_MASTER || defined SINGLE_MASTER
   GPIO_InitStruct.Pin = CHARGER_PIN;                  // Charger
   HAL_GPIO_Init(CHARGER_PORT, &GPIO_InitStruct);
   #endif
 
   GPIO_InitStruct.Pull = GPIO_NOPULL;
 
-  #ifdef BOARD_MASTER
+  #if defined BOARD_MASTER || defined SINGLE_MASTER
   GPIO_InitStruct.Pin = BUTTON_PIN;                   // Power Switch
   HAL_GPIO_Init(BUTTON_PORT, &GPIO_InitStruct);
   #endif
@@ -341,7 +341,7 @@ void MX_GPIO_Init(void) {
   #endif  
   GPIO_InitStruct.Pin = LED_PIN;
   HAL_GPIO_Init(LED_PORT, &GPIO_InitStruct);
-  #ifdef BOARD_MASTER
+  #if defined BOARD_MASTER || defined SINGLE_MASTER
   GPIO_InitStruct.Pin = LED_PIN_1;
   HAL_GPIO_Init(LED_PORT_1, &GPIO_InitStruct);
   GPIO_InitStruct.Pin = BUZZER_PIN;
