@@ -307,17 +307,16 @@ void MX_GPIO_Init(void) {
 
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+  
   GPIO_InitStruct.Pin = CHARGER_PIN;                  // Charger
   HAL_GPIO_Init(CHARGER_PORT, &GPIO_InitStruct);
-  #endif
+  
 
   GPIO_InitStruct.Pull = GPIO_NOPULL;
 
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+
   GPIO_InitStruct.Pin = BUTTON_PIN;                   // Power Switch
   HAL_GPIO_Init(BUTTON_PORT, &GPIO_InitStruct);
-  #endif
   GPIO_InitStruct.Pin = BUTTON1_PIN;                  // Button1 (closer to the speaker)
   HAL_GPIO_Init(BUTTON1_PORT, &GPIO_InitStruct);
   GPIO_InitStruct.Pin = BUTTON2_PIN;                  // Button2 
@@ -341,14 +340,15 @@ void MX_GPIO_Init(void) {
   #endif  
   GPIO_InitStruct.Pin = LED_PIN;
   HAL_GPIO_Init(LED_PORT, &GPIO_InitStruct);
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+  #ifdef BOARD_MASTER
   GPIO_InitStruct.Pin = LED_PIN_1;
   HAL_GPIO_Init(LED_PORT_1, &GPIO_InitStruct);
   GPIO_InitStruct.Pin = BUZZER_PIN;
   HAL_GPIO_Init(BUZZER_PORT, &GPIO_InitStruct);
+  #endif
   GPIO_InitStruct.Pin = OFF_PIN;
   HAL_GPIO_Init(OFF_PORT, &GPIO_InitStruct);
-  #endif
+
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 

@@ -345,6 +345,7 @@ void Input_Init(void) {
     HAL_UART_Receive_DMA(&huart2, (uint8_t *)rx_buffer_L, sizeof(rx_buffer_L));
     UART_DisableRxErrors(&huart2);
   #endif
+  
   #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
     uint16_t writeCheck, readVal;
     HAL_FLASH_Unlock();
@@ -366,12 +367,11 @@ void Input_Init(void) {
         EE_ReadVariable(VirtAddVarTab[ 8+8*i] , &readVal); input2[i].min = (int16_t)readVal;
         EE_ReadVariable(VirtAddVarTab[ 9+8*i] , &readVal); input2[i].mid = (int16_t)readVal;
         EE_ReadVariable(VirtAddVarTab[10+8*i] , &readVal); input2[i].max = (int16_t)readVal;
-      
-        #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
-          printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
+      #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
+        printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
           input1[i].typ, input1[i].min, input1[i].mid, input1[i].max,
           input2[i].typ, input2[i].min, input2[i].mid, input2[i].max);
-        #endif
+      #endif
       }
     } else {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
@@ -389,10 +389,11 @@ void Input_Init(void) {
         } else {
           input2[i].typ = input2[i].typDef;
         }
+        HAL_Delay(100); // Needed for normal operation.
         #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
           printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
-          input1[i].typ, input1[i].min, input1[i].mid, input1[i].max,
-          input2[i].typ, input2[i].min, input2[i].mid, input2[i].max);
+            input1[i].typ, input1[i].min, input1[i].mid, input1[i].max,
+            input2[i].typ, input2[i].min, input2[i].mid, input2[i].max);
         #endif
       }
     }
@@ -1773,9 +1774,8 @@ void saveConfig() {
 void poweroff(void) {
   enable = 0;
   enableMotors = 0;
-  #ifndef SINGLE_MASTER
-    usart2_tx_Send();
-  #endif
+  usart2_tx_Send();
+
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
   printf("-- Motors disabled --\r\n");
   #endif
@@ -2011,5 +2011,3 @@ void multipleTapDet(int16_t u, uint32_t timeNow, MultipleTap *x) {
   x->b_hysteresis 	= b_hyst;
   x->t_timePrev 	  = t_time;
 }
-
-

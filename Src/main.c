@@ -196,9 +196,8 @@ int main(void) {
   MX_ADC2_Init();
   BLDC_Init();        // BLDC Controller Init
 
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_SET);   // Activate Latch
-  #endif
   Input_Lim_Init();   // Input Limitations Init
   Input_Init();       // Input Init
  
@@ -236,12 +235,12 @@ int main(void) {
       rtP_Motor.i_max = (MULTI_MODE_M1_I_MOT_MAX * A2BIT_CONV) << 4;
     }
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
-    printf("Drive mode %i selected: max_speed:%i acc_rate:%i \r\n", drive_mode, max_speed, rate);
+      printf("Drive mode %i selected: max_speed:%i acc_rate:%i \r\n", drive_mode, max_speed, rate);
     #endif
   #endif
 
   // Loop until button is released
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+  #ifdef BOARD_MASTER
   while(HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) { HAL_Delay(10); }
   #endif
 
@@ -261,7 +260,7 @@ int main(void) {
       // ####### MOTOR ENABLING: Only if the initial input is very small (for SAFETY) #######
       if (enable == 0 && !errCode_Slave && !errCode_Master && 
           ABS(input1[inIdx].cmd) < 50 && ABS(input2[inIdx].cmd) < 50){
-        #if defined BOARD_MASTER || defined SINGLE_MASTER
+        #ifdef BOARD_MASTER
           beepShort(6);                     // make 2 beeps indicating the motor enable
           beepShort(4); HAL_Delay(100);
         #endif
@@ -358,7 +357,7 @@ int main(void) {
 
       // ####### SET OUTPUTS (if the target change is less than +/- 100) #######
       #endif
-      #if defined BOARD_MASTER || defined SINGLE_MASTER
+      #ifdef BOARD_MASTER
         pwm = cmdMaster;
       #endif
       #ifdef BOARD_SLAVE
@@ -477,7 +476,7 @@ int main(void) {
     // ####### CALC BOARD TEMPERATURE #######
     filtLowPass32(adc_buffer.temp, TEMP_FILT_COEF, &board_temp_adcFixdt);
     board_temp_adcFilt  = (int16_t)(board_temp_adcFixdt >> 16);  // convert fixed-point to integer
-    #if defined BOARD_MASTER || defined SINGLE_MASTER
+    #ifdef BOARD_MASTER
     board_temp_deg_c_Master     = (TEMP_CAL_HIGH_DEG_C - TEMP_CAL_LOW_DEG_C) * (board_temp_adcFilt - TEMP_CAL_LOW_ADC) / (TEMP_CAL_HIGH_ADC - TEMP_CAL_LOW_ADC) + TEMP_CAL_LOW_DEG_C;
     #endif
     #ifdef BOARD_SLAVE
@@ -485,7 +484,7 @@ int main(void) {
     #endif
 
     // ####### CALC CALIBRATED BATTERY VOLTAGE #######
-    #if defined BOARD_MASTER || defined SINGLE_MASTER
+    #ifdef BOARD_MASTER
     batVoltageCalib = batVoltage * BAT_CALIB_REAL_VOLTAGE / BAT_CALIB_ADC;
     #endif
 
@@ -504,7 +503,7 @@ int main(void) {
             input2[inIdx].raw,        // 2: INPUT2
             cmdMaster,                // 3: output command: [-1000, 1000]
             cmdSlave,                 // 4: output command: [-1000, 1000]
-            adc_buffer.batt,          // 5: for battery voltage calibration
+            adc_buffer.batt,         // 5: for battery voltage calibration
             batVoltageCalib,          // 6: for verifying battery voltage calibration
             board_temp_adcFilt,       // 7: for board temperature calibration
             board_temp_deg_c_Master,  // 8: for verifying board Master temperature calibration
@@ -530,12 +529,12 @@ int main(void) {
     #endif
 
     // ####### CHARGE PORT CHECK #######
-    #if defined BOARD_MASTER || defined SINGLE_MASTER
+    #ifdef BOARD_MASTER
     chargeCheck();
     #endif
     
     // ####### POWEROFF BY POWER-BUTTON #######
-    #if defined BOARD_MASTER || defined SINGLE_MASTER
+    #ifdef BOARD_MASTER
     poweroffPressCheck();
     #endif
     // ####### BEEP AND EMERGENCY POWEROFF #######
@@ -590,7 +589,7 @@ int main(void) {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Powering off, wheels were inactive for too long\r\n");
       #endif
-      //poweroff();
+      poweroff();
     }
 
 

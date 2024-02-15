@@ -80,7 +80,7 @@
 #define LED_PIN             GPIO_PIN_5                        //  Output Mosfet LED SLOT_1
 #define LED_PORT            GPIOB
 
-#if defined BOARD_MASTER || defined SINGLE_MASTER
+#ifdef BOARD_MASTER
 #define LED_PIN_1           GPIO_PIN_8                        //  Output Mosfet LED SLOT_2
 #define LED_PORT_1          GPIOB
 #endif
@@ -96,7 +96,7 @@
 #define LED_ORANGE_PORT     GPIOA
 #endif
 
-#if defined BOARD_MASTER || defined SINGLE_MASTER
+#ifdef BOARD_MASTER
 #define BUZZER_PIN          GPIO_PIN_9                        // Buzzer 
 #define BUZZER_PORT         GPIOB
 #endif
@@ -192,4 +192,3 @@ void PWM_ISR_CH2_Callback(void);
 #define SWD_SET             (0x2000)   //  0010 0000 0000 0000
 
 #endif // DEFINES_H
-

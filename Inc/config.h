@@ -11,7 +11,7 @@
 // or use VARIANT environment variable for example like "make -e VARIANT=VARIANT_NUNCHUK". Select only one at a time.
 #if !defined(PLATFORMIO)
   //#define VARIANT_ADC         // Variant for control via ADC input
-  //#define VARIANT_USART       // Variant for Serial control via USART1 input
+  #define VARIANT_USART       // Variant for Serial control via USART1 input
   //#define VARIANT_NUNCHUK     // Variant for Nunchuk controlled vehicle build
   //#define VARIANT_PPM         // Variant for RC-Remote with PPM-Sum Signal
   //#define VARIANT_PWM         // Variant for RC-Remote with PWM Signal
@@ -56,20 +56,17 @@
 // ADC Total conversion time: this will be used to offset TIM8 in advance of TIM1 to align the Phase current ADC measurement
 // This parameter is used in setup.c
 #define ADC_TOTAL_CONV_TIME     (ADC_CLOCK_DIV * ADC_CONV_CLOCK_CYCLES) // = ((SystemCoreClock / ADC_CLOCK_HZ) * ADC_CONV_CLOCK_CYCLES), where ADC_CLOCK_HZ = SystemCoreClock/ADC_CLOCK_DIV
-// # END OF  DO-NOT-TOUCH SETTINGS ################################################################
+// ########################### END OF  DO-NOT-TOUCH SETTINGS ############################
 
+// ############################### BOARD VARIANT ###############################
+/* Board Variant */
+ 
+// #define BOARD_MASTER                      // board master 
+#define BOARD_SLAVE                       // board slave
 
-// # BOARD VARIANT SPLIT ##########################################################################
-// #define BOARD_MASTER  // board master 
-#define BOARD_SLAVE  // board slave
+// ######################## END OF BOARD VARIANT ###############################
 
-// # BOARD VARIANT SINGLE #########################################################################
-// #define SINGLE_MASTER  // uncomment if you only have the master board
-
-// # END OF BOARD VARIANT #########################################################################
-
-
-// # BATTERY ######################################################################################
+// ############################### BATTERY ###############################
 /* Battery voltage calibration: connect power source.
  * see How to calibrate.
  * Write debug output value nr 5 to BAT_CALIB_ADC. make and flash firmware.
@@ -262,9 +259,6 @@
 // #define DEBUG_I2C_LCD                // standard 16x2 or larger text-lcd via i2c-converter on right sensor board cable
 // ########################### END OF DEBUG LCD ############################
 
-// ############################# BUZZER ENABLE / DISABLE #############################
-#define BUZZER_ENABLED               // If enabled the buzzer will buzz, otherwise not.
-// ######################### END OF BUZZER ENABLE / DISABLE ##########################
 
 
 // ################################# VARIANT_ADC SETTINGS ############################
@@ -290,16 +284,14 @@
 */
   #define CONTROL_ADC           0         // use ADC as input. Number indicates priority for dual-input. Disable CONTROL_SERIAL_USART2, FEEDBACK_SERIAL_USART2, DEBUG_SERIAL_USART2!
 
-  // #define DUAL_INPUTS                     //  ADC*(Primary) + UART(Auxiliary). Uncomment this to use Dual-inputs
+  #define DUAL_INPUTS                     //  ADC*(Primary) + UART(Auxiliary). Uncomment this to use Dual-inputs
   #define PRI_INPUT1            3, 0, 0, 4095, 0      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #define PRI_INPUT2            3, 0, 0, 4095, 0      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #ifdef DUAL_INPUTS
     #define FLASH_WRITE_KEY     0x1101    // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
     // #define SIDEBOARD_SERIAL_USART1 1
-    
     #define CONTROL_SERIAL_USART1 1       // right sensor board cable. Number indicates priority for dual-input. Disable if I2C (nunchuk or lcd) is used! For Arduino control check the hoverSerial.ino
     #define FEEDBACK_SERIAL_USART1        // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
-
     #define AUX_INPUT1          3, -1000, 0, 1000, 0  // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
     #define AUX_INPUT2          3, -1000, 0, 1000, 0  // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #else
@@ -310,8 +302,7 @@
   
   #define CONTROL_SERIAL_USART2  0    // MASTER   => SLAVE
   #define FEEDBACK_SERIAL_USART2      // SLAVE    => MASTER
-
-  #define TANK_STEERING                   // use for tank steering, each input controls each wheel 
+  // #define TANK_STEERING                   // use for tank steering, each input controls each wheel 
   // #define ADC_ALTERNATE_CONNECT           // use to swap ADC inputs
   // #define SUPPORT_BUTTONS_LEFT            // use left sensor board cable for button inputs.  Disable DEBUG_SERIAL_USART2!
   // #define SUPPORT_BUTTONS_RIGHT           // use right sensor board cable for button inputs. Disable DEBUG_SERIAL_USART1!
@@ -325,11 +316,10 @@
  
   // #define DEBUG_SERIAL_USART1           // 
  
-  #if defined (BOARD_MASTER) || defined (SINGLE_MASTER)
-    #ifndef SINGLE_MASTER
+  #ifdef BOARD_MASTER
   #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
   #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
-    #endif
+
   #define CONTROL_SERIAL_USART1  0    // ARDUINO  => MASTER  // check the hoverSerial.ino
   #define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
   #endif
@@ -342,9 +332,9 @@
   #define PRI_INPUT1             3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #define PRI_INPUT2             3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
 
-  #define FLASH_WRITE_KEY      0x1002 // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
+  #define FLASH_WRITE_KEY      0x1004  // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
 
-  #define TANK_STEERING               // use for tank steering, each input controls each wheel 
+  #define TANK_STEERING              // use for tank steering, each input controls each wheel 
 
 #endif
 // ######################## END OF VARIANT_USART SETTINGS #########################
@@ -702,14 +692,6 @@
   #error BOARD_SLAVE and BOARD_MASTER not allowed, choose one.
 #endif
 
-#if defined(BOARD_SLAVE) && defined(SINGLE_MASTER)
-  #error BOARD_SLAVE and SINGLE_MASTER not allowed, choose one.
-#endif
-
-#if defined(BOARD_MASTER) && defined(SINGLE_MASTER)
-  #error BOARD_MASTER and SINGLE_MASTER not allowed, choose one.
-#endif
-
 #if defined(CONTROL_SERIAL_USART2) && defined(SIDEBOARD_SERIAL_USART2)
   #error CONTROL_SERIAL_USART2 and SIDEBOARD_SERIAL_USART2 not allowed, choose one.
 #endif
@@ -818,4 +800,3 @@
 // ############################# END OF VALIDATE SETTINGS ############################
 
 #endif
-

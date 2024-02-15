@@ -183,7 +183,7 @@
 /* Pages 0 and 1 base and end addresses */
 #define PAGE0_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0x0000))
 #define PAGE0_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + (PAGE_SIZE - 1)))
-#define PAGE0_ID               ADDR_FLASH_PAGE_64 // bylo 64
+#define PAGE0_ID               ADDR_FLASH_PAGE_65 // bylo 64
 
 #define PAGE1_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0x400)) // było 0xFFEE
 #define PAGE1_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + 0x400 + PAGE_SIZE - 1)) // było 0xFFEE

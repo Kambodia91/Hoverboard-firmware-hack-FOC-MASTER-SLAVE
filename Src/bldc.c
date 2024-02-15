@@ -57,10 +57,8 @@ uint8_t               buzzerFreq      = 0;
 uint8_t               buzzerPattern   = 0;
 uint8_t               buzzerCount     = 0;
 volatile uint32_t     buzzerTimer     = 0;
-#if defined BUZZER_ENABLED && defined BOARD_MASTER || defined SINGLE_MASTER
 static uint8_t        buzzerPrev      = 0;
 static uint8_t        buzzerIdx       = 0;
-#endif
 
 int16_t               errCode_Master;
 int16_t               errCode_Slave;
@@ -80,7 +78,7 @@ static int16_t        offsetrC        = 2000;
 static int16_t        offsetdc        = 2000;
 
 int16_t               batVoltage      = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE;
-#if defined BOARD_MASTER || defined SINGLE_MASTER
+#ifdef BOARD_MASTER
 static int32_t        batVoltageFixdt = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_REAL_VOLTAGE << 16;  // Fixed-point filter output initialized at 400 V*100/cell = 4 V/cell converted to fixed-point
 #endif
 
@@ -91,7 +89,7 @@ void DMA1_Channel1_IRQHandler(void) {
   DMA1->IFCR = DMA_IFCR_CTCIF1;
   
   // calibrate ADC offsets
-  if(offsetcount < 2000) {  
+  if(offsetcount < 4000) {  
     offsetcount++;
     offsetrB = (adc_buffer.curB + offsetrB) / 2;
     offsetrC = (adc_buffer.curC + offsetrC) / 2;
@@ -99,7 +97,7 @@ void DMA1_Channel1_IRQHandler(void) {
     return;
   }
 
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+  #ifdef BOARD_MASTER
   if (buzzerTimer % 1000 == 0) {  // Filter battery voltage at a slower sampling rate
     filtLowPass32(adc_buffer.batt, BAT_FILT_COEF, &batVoltageFixdt);
     batVoltage = (int16_t)(batVoltageFixdt >> 16);  // convert fixed-point to integer
@@ -114,14 +112,15 @@ void DMA1_Channel1_IRQHandler(void) {
   // Disable PWM when current limit is reached (current chopping)
   // This is the Level 2 of current protection. The Level 1 should kick in first given by I_MOT_MAX
   if(ABS(cur_DC)  > curDC_max || enable == 0 || enableMotors == 0) {
+    //ADC_TIM->BDTR &= ~TIM_BDTR_MOE;
     MOTOR_TIM->BDTR &= ~TIM_BDTR_MOE;
   } else {
+    //ADC_TIM->BDTR |= TIM_BDTR_MOE;
     MOTOR_TIM->BDTR |= TIM_BDTR_MOE;
   }
 
   // Create square wave for buzzer
   buzzerTimer++;
-  #if defined BUZZER_ENABLED && defined BOARD_MASTER || defined SINGLE_MASTER
   if (buzzerFreq != 0 && (buzzerTimer / 5000) % (buzzerPattern + 1) == 0) {
     if (buzzerPrev == 0) {
       buzzerPrev = 1;
@@ -130,18 +129,17 @@ void DMA1_Channel1_IRQHandler(void) {
       }
     }
     if (buzzerTimer % buzzerFreq == 0 && (buzzerIdx <= buzzerCount || buzzerCount == 0)) {
-      #if defined BOARD_MASTER || defined SINGLE_MASTER
+      #ifdef BOARD_MASTER
       HAL_GPIO_TogglePin(BUZZER_PORT, BUZZER_PIN);
       #endif
     }
   } else if (buzzerPrev) {
-      #if defined BOARD_MASTER || defined SINGLE_MASTER
+      #ifdef BOARD_MASTER
       HAL_GPIO_WritePin(BUZZER_PORT, BUZZER_PIN, GPIO_PIN_RESET);
       #endif
       buzzerPrev = 0;
   }
-  #endif
-  
+
   // Adjust pwm_margin depending on the selected Control Type
   if (rtP_Motor.z_ctrlTypSel == FOC_CTRL) {
     pwm_margin = 110;
@@ -161,9 +159,9 @@ void DMA1_Channel1_IRQHandler(void) {
   OverrunFlag = true;
 
   /* Make sure to stop motor in case of an error */
-  enableFin = enable && !errCode_Slave &&  !errCode_Master && enableMotors && !chargeStatus;
+  enableFin = enable && !errCode_Slave && !errCode_Master && enableMotors && !chargeStatus;
     
-  #if defined BOARD_MASTER || defined SINGLE_MASTER
+  #ifdef BOARD_MASTER
   enableFinMaster = enableFin;
   #endif
   #ifdef BOARD_SLAVE
@@ -198,7 +196,7 @@ void DMA1_Channel1_IRQHandler(void) {
     v = rtY_Motor.DC_phaB;
     w = rtY_Motor.DC_phaC;
     
-    #if defined BOARD_MASTER || defined SINGLE_MASTER
+    #ifdef BOARD_MASTER
     errCode_Master = rtY_Motor.z_errCode;
     #endif
     #ifdef BOARD_SLAVE
