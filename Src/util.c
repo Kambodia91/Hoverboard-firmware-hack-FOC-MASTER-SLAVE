@@ -876,6 +876,7 @@ void readInputRaw(void) {
       #else
         input1[inIdx].raw = adc_buffer.AdcIn;
         input2[inIdx].raw = adc_buffer.AdcIn;
+        enableMotors = 1;
       #endif
     }
     #endif
