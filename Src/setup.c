@@ -84,6 +84,9 @@ volatile adc_buf_t adc_buffer;
 /* USART1 init function */
 void UART1_Init(void)
 {
+  /* Enable alternative pinout usart1 */
+  __HAL_AFIO_REMAP_USART1_ENABLE();
+
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 

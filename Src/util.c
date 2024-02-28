@@ -961,13 +961,19 @@ void readInputRaw(void) {
     #endif
     #if defined(CONTROL_PPM_RIGHT)
     if (inIdx == CONTROL_PPM_RIGHT) {
+         
       input1[inIdx].raw = (ppm_captured_value[0] - 500) * 2;
       input2[inIdx].raw = (ppm_captured_value[1] - 500) * 2;
     }
     #endif
     #if (defined(CONTROL_PPM_LEFT) || defined(CONTROL_PPM_RIGHT)) && defined(SUPPORT_BUTTONS)
-      button1 = ppm_captured_value[5] > 500;
-      button2 = 0;
+      enableMotors      = (ppm_captured_value[2] > 500);   
+      button1           = (ppm_captured_value[4] > 500);
+      button2           = (ppm_captured_value[5] > 500);
+    #endif
+    
+    #if (defined(CONTROL_PPM_LEFT) || defined(CONTROL_PPM_RIGHT)) && !defined(SUPPORT_BUTTONS)
+      enableMotors      = 1;
     #endif
 
     #if defined(CONTROL_PWM_LEFT)

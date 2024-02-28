@@ -107,6 +107,25 @@
 #define CHARGER_PIN         GPIO_PIN_15                       // Charger
 #define CHARGER_PORT        GPIOC
 
+#if defined(CONTROL_PPM_LEFT)
+#define PPM_PIN             GPIO_PIN_3                        // Reciver pin USART2
+#define PPM_PORT            GPIOA
+#elif defined(CONTROL_PPM_RIGHT)
+#define PPM_PIN             GPIO_PIN_7                        // Reciver pin USART1
+#define PPM_PORT            GPIOB
+#endif
+
+#if defined(CONTROL_PWM_LEFT)
+#define PWM_PIN_CH1         GPIO_PIN_2                        // Transmit pin USART2
+#define PWM_PORT_CH1        GPIOA
+#define PWM_PIN_CH2         GPIO_PIN_3                        // Reciver pin USART2
+#define PWM_PORT_CH2        GPIOA
+#elif defined(CONTROL_PWM_RIGHT)
+#define PWM_PIN_CH1         GPIO_PIN_6                        // Transmit pin USART1
+#define PWM_PORT_CH1        GPIOB
+#define PWM_PIN_CH2         GPIO_PIN_7                        // Recived pin USART1
+#define PWM_PORT_CH2        GPIOB
+#endif
 // INPUT BUTTON
 #define BUTTON_PIN          GPIO_PIN_10                       // Power Button
 #define BUTTON_PORT         GPIOB

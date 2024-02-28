@@ -61,8 +61,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-// #define BOARD_MASTER                      // board master 
-#define BOARD_SLAVE                       // board slave
+#define BOARD_MASTER                      // board master 
+// #define BOARD_SLAVE                       // board slave
 
 // ######################## END OF BOARD VARIANT ###############################
 
@@ -379,7 +379,8 @@
 // ################################# VARIANT_PPM SETTINGS ##############################
 #ifdef VARIANT_PPM
 /* ###### CONTROL VIA RC REMOTE ######
- * Right sensor board cable. Channel 1: steering, Channel 2: speed.
+ * Right sensor board cable. Channel 1: MasterSpeed, Channel 2: SlaveSpeed. 
+ * If support button.        Channel 3: EnableMotors, Channel 4: EMPTY, Channel 5: Button1, Channel 6: Button2. 
  * https://gist.github.com/peterpoetzi/1b63a4a844162196613871767189bd05
 */
   // #define DUAL_INPUTS                     // ADC*(Primary) + PPM(Auxiliary). Uncomment this to use Dual-inputs
@@ -398,17 +399,21 @@
     #define PRI_INPUT1            3, -1000, 0, 1000, 100  // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
     #define PRI_INPUT2            3, -1000, 0, 1000, 100  // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #endif
+  #ifdef BOARD_MASTER
+    #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
+    #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
+  #endif
   #define PPM_NUM_CHANNELS        6       // total number of PPM channels to receive, even if they are not used.
 
-  // #define TANK_STEERING                   // use for tank steering, each input controls each wheel 
-  // #define SUPPORT_BUTTONS                 // Define for PPM buttons support
+  #define TANK_STEERING                   // use for tank steering, each input controls each wheel 
+  #define SUPPORT_BUTTONS                 // Define for PPM buttons support
   // #define SUPPORT_BUTTONS_LEFT            // use left sensor board cable for button inputs.  Disable DEBUG_SERIAL_USART2!
   // #define SUPPORT_BUTTONS_RIGHT           // use right sensor board cable for button inputs. Disable DEBUG_SERIAL_USART1!
 
   #if defined(CONTROL_PPM_RIGHT) && !defined(DUAL_INPUTS)
-    #define DEBUG_SERIAL_USART2           // left sensor cable debug
+    // #define DEBUG_SERIAL_USART2           // left sensor cable debug
   #elif defined(CONTROL_PPM_LEFT) && !defined(DUAL_INPUTS)
-    #define DEBUG_SERIAL_USART1           // right sensor cable debug
+    // #define DEBUG_SERIAL_USART1           // right sensor cable debug
   #endif
 #endif
 // ############################# END OF VARIANT_PPM SETTINGS ############################
