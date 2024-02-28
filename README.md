@@ -54,7 +54,13 @@ To explore the controller without a Matlab/Simulink installation click on the li
 ---
 ## Example Variants
 
+- **VARIANT_ADC**: The motors are controlled by one potentiometer connected to the white cable (connector hall). EnableMotors will turn on automatically.
+
 - **VARIANT_USART**: The motors are controlled via serial protocol (e.g. on USART1). The commands can be sent from an Arduino. Check out the [hoverserial](/Arduino/hoverserial.cpp) as an example sketch.
+
+- **VARIANT_PPM**: RC remote control with PPM Sum signal. Reciver connect to pin RX USATR1. Ch1: MasterSpeed, Ch2: SlaveSpeed, Ch3: EnableMotors, Ch4: -, Ch5: Button1, Ch6: Button2. When Button_Support is disabled, EnnableMotors will be enabled automatically.
+  
+- **VARIANT_PWM:** RC remote control with PWM signal. PWM signal 1 (MasterSpeed) connect to TX USART1, PWM signal 2 (SlaveSpeed) connect to RX USART1. EnableMotors will turn on automatically.
 
 Of course the firmware can be further customized for other needs or projects.
 
