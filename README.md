@@ -65,6 +65,11 @@ To explore the controller without a Matlab/Simulink installation click on the li
 Of course the firmware can be further customized for other needs or projects.
 
 ---
+## Status
+![HOVER-1](/docs/Status.png)
+
+
+---
 ## Projects and Links
 
 - **Original firmware:** [https://github.com/lucysrausch/hoverboard-firmware-hack](https://github.com/lucysrausch/hoverboard-firmware-hack)
