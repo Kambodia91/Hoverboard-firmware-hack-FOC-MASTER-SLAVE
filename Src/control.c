@@ -182,7 +182,7 @@ void PWM_Init(void) {
   
   // Channel 1 (steering)
   GPIO_InitTypeDef GPIO_InitStruct1 = {0};
-  // Configure GPIO pin : PA2 (Left) or PB10 (Right)
+  // Configure GPIO pin : PA2 (Left) or PB6 (Right)
   GPIO_InitStruct1.Pin          = PWM_PIN_CH1;
   GPIO_InitStruct1.Mode         = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct1.Speed        = GPIO_SPEED_FREQ_HIGH;
@@ -191,7 +191,7 @@ void PWM_Init(void) {
 
   // Channel 2 (speed)
   GPIO_InitTypeDef GPIO_InitStruct2 = {0};
-  /*Configure GPIO pin : PA3 (Left) or PB11 (Right) */
+  /*Configure GPIO pin : PA3 (Left) or PB7 (Right) */
   GPIO_InitStruct2.Pin          = PWM_PIN_CH2;
   GPIO_InitStruct2.Mode         = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct2.Speed        = GPIO_SPEED_FREQ_HIGH;
