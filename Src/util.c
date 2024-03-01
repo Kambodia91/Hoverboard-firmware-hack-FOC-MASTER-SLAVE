@@ -233,9 +233,9 @@ static uint32_t Sideboard_R_len = sizeof(Sideboard_R);
 static SerialUart2 commandL;
 static SerialUart2 commandL_raw;
 static uint32_t commandL_len = sizeof(commandL);
-  #ifdef CONTROL_IBUS
-  static uint16_t ibusL_captured_value[IBUS_NUM_CHANNELS];
-  #endif
+  // #ifdef CONTROL_IBUS
+  // static uint16_t ibusL_captured_value[IBUS_NUM_CHANNELS];
+  // #endif
 #endif
 
 #if defined(CONTROL_SERIAL_USART1)
@@ -896,13 +896,13 @@ void readInputRaw(void) {
 
     #if defined(CONTROL_SERIAL_USART2)
     if (inIdx == CONTROL_SERIAL_USART2) {
-      #ifdef CONTROL_IBUS
-        for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i+=2) {
-          ibusL_captured_value[(i/2)] = CLAMP(commandL.channels[i] + (commandL.channels[i+1] << 8) - 1000, 0, INPUT_MAX); // 1000-2000 -> 0-1000
-        }
-        input1[inIdx].raw = (ibusL_captured_value[0] - 500) * 2;
-        input2[inIdx].raw = (ibusL_captured_value[1] - 500) * 2; 
-      #else
+      // #ifdef CONTROL_IBUS
+      //   for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i+=2) {
+      //     ibusL_captured_value[(i/2)] = CLAMP(commandL.channels[i] + (commandL.channels[i+1] << 8) - 1000, 0, INPUT_MAX); // 1000-2000 -> 0-1000
+      //   }
+      //   input1[inIdx].raw = (ibusL_captured_value[0] - 500) * 2;
+      //   input2[inIdx].raw = (ibusL_captured_value[1] - 500) * 2; 
+      // #else
         // Message Master => Slave
         #ifdef BOARD_SLAVE                                            // RX UART2
         enableMotors              = commandL.enableMotors;            // BOARD SLAVE    <= Message enableMotors       <= BOARD MASTER.
@@ -920,7 +920,7 @@ void readInputRaw(void) {
         board_temp_deg_c_Slave    = commandL.boardTemp;               // BOARD MASTER   <= Message boardTemp          <= BOARD SLAVE.
         errCode_Slave             = commandL.errCode;                 // BOARD MASTER   <= Message errCode            <= BOARD SLAVE.
         enableFinSlave            = commandL.enableFin;
-        #endif
+        // #endif
       #endif
     }
     #endif
@@ -1401,29 +1401,29 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
 #if defined(CONTROL_SERIAL_USART2)
 void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx) 
 {
-  #ifdef CONTROL_IBUS
-    uint16_t ibus_chksum;
-    if (command_in->start == IBUS_LENGTH && command_in->type == IBUS_COMMAND) {
-      ibus_chksum = 0xFFFF - IBUS_LENGTH - IBUS_COMMAND;
-      for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i++) {
-        ibus_chksum -= command_in->channels[i];
-      }
-      if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
-        *command_out = *command_in;
-        if (usart_idx == 2) {             // Sideboard USART2
-          #ifdef CONTROL_SERIAL_USART2
-          timeoutFlgSerial_L = 0;         // Clear timeout flag
-          timeoutCntSerial_L = 0;         // Reset timeout counter
-          #endif
-        } else if (usart_idx == 1) {      // Sideboard USART1
-          #ifdef CONTROL_SERIAL_USART1
-          timeoutFlgSerial_R = 0;         // Clear timeout flag
-          timeoutCntSerial_R = 0;         // Reset timeout counter
-          #endif
-        }
-      }
-    }
-  #else
+  // #ifdef CONTROL_IBUS
+  //   uint16_t ibus_chksum;
+  //   if (command_in->start == IBUS_LENGTH && command_in->type == IBUS_COMMAND) {
+  //     ibus_chksum = 0xFFFF - IBUS_LENGTH - IBUS_COMMAND;
+  //     for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i++) {
+  //       ibus_chksum -= command_in->channels[i];
+  //     }
+  //     if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
+  //       *command_out = *command_in;
+  //       if (usart_idx == 2) {             // Sideboard USART2
+  //         #ifdef CONTROL_SERIAL_USART2
+  //         timeoutFlgSerial_L = 0;         // Clear timeout flag
+  //         timeoutCntSerial_L = 0;         // Reset timeout counter
+  //         #endif
+  //       } else if (usart_idx == 1) {      // Sideboard USART1
+  //         #ifdef CONTROL_SERIAL_USART1
+  //         timeoutFlgSerial_R = 0;         // Clear timeout flag
+  //         timeoutCntSerial_R = 0;         // Reset timeout counter
+  //         #endif
+  //       }
+  //     }
+  //   }
+  // #else
   uint16_t checksum;
   
   if (command_in->start == SERIAL_START_FRAME) {
@@ -1447,7 +1447,7 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
       }
     }
   }
-  #endif
+  // #endif
 }
 #endif
 

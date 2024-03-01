@@ -33,7 +33,7 @@
       uint8_t  channels[IBUS_NUM_CHANNELS*2];
       uint8_t  checksuml;
       uint8_t  checksumh;
-    } SerialCommand;
+    } SerialUart1;
   #else
     typedef struct{ // RECIVER - Master/Arduino
       uint16_t  start;          // 
@@ -47,15 +47,15 @@
 #endif
 
 #if defined(CONTROL_SERIAL_USART2)
-  #ifdef CONTROL_IBUS
-    typedef struct{
-      uint8_t  start;
-      uint8_t  type; 
-      uint8_t  channels[IBUS_NUM_CHANNELS*2];
-      uint8_t  checksuml;
-      uint8_t  checksumh;
-    } SerialCommand;
-  #else
+  // #ifdef CONTROL_IBUS
+  //   typedef struct{
+  //     uint8_t  start;
+  //     uint8_t  type; 
+  //     uint8_t  channels[IBUS_NUM_CHANNELS*2];
+  //     uint8_t  checksuml;
+  //     uint8_t  checksumh;
+  //   } SerialCommand;
+  // #else
     typedef struct{ // RECIVER - Master/Slave
       uint16_t  start;          // 
       int16_t   enableMotors;   // Master   => Slave
@@ -70,7 +70,7 @@
       int16_t   chargeStatus;   // Master  <=> Slawe
       uint16_t  checksum;       // 
     } SerialUart2;
-  #endif
+  // #endif
 #endif
 
 #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
