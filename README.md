@@ -34,6 +34,27 @@ Board pinouts: Slave / Master
 ## My Project
 I am trying to create a 4-wheeled vehicle. Initial sketch idea: ![vehicle](docs/pictures/Lawn%20Project/IMG20231008132136.jpg) (rigid without turning the wheels) using 2 howerboards for the wheels, communication will be made using uart and esp32. Currently, I was thinking about the actual position in space of the vehicle and came to the conclusion that the best solution would be to use the DW1000. In the future, there may be a lidar sensor. A lawn mower will be installed on the wheels to mow the lawn automatically. I invite you to the docs tab there are more [photos](/docs/pictures/) from the construction.
 
+-- --
+
+To do: 
+- [x] Hack howerboard motherboards.  
+- [x] Convert the LED Out socket to a USART1 socket for control.  
+- [x] Change tire size.  
+- [x] Extend the wheel current cables and the hall sensor signal.  
+- [x] Insert the wheel controller into the housing.  
+- [x] Make connections for programming and debugging without having to remove the boards.  
+- [x] Vehicle frame structure.
+- [x] Cutting height.
+- [x] Installation of the combustion engine.  
+- [ ] Connecting the engine shaft with the alternator pulley with a multi-grooved belt.  
+- [ ] Converting a 12v alternator to 42v.  
+- [ ] Installing the alternator to the vehicle frame.
+- [ ] Selecting a remote control for manual control.
+- [ ] Installation of a PIXHAWK controller for remote planning and autonomous mission
+- [ ] Combine the GPS system with RTK correction to obtain high spatial orientation accuracy
+- [ ] installation of sensors to avoid obstacles
+      
+
 ---
 ## FOC Firmware
  
