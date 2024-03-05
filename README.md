@@ -45,7 +45,8 @@ To do:
 - [x] Make connections for programming and debugging without having to remove the boards.  
 - [x] Vehicle frame structure.
 - [x] Cutting height.
-- [x] Installation of the combustion engine.  
+- [x] Installation of the combustion engine.
+- [x] Making a hub to connect the alternator and the cutting knife.
 - [ ] Connecting the engine shaft with the alternator pulley with a multi-grooved belt.  
 - [ ] Converting a 12v alternator to 42v.  
 - [ ] Installing the alternator to the vehicle frame.
