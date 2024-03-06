@@ -61,8 +61,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-// #define BOARD_MASTER                      // board master 
-#define BOARD_SLAVE                       // board slave
+#define BOARD_MASTER                      // board master 
+// #define BOARD_SLAVE                       // board slave
 
 // ######################## END OF BOARD VARIANT ###############################
 

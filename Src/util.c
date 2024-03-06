@@ -932,6 +932,7 @@ void readInputRaw(void) {
         }
         input1[inIdx].raw = (ibusR_captured_value[0] - 500) * 2;
         input2[inIdx].raw = (ibusR_captured_value[1] - 500) * 2; 
+        enableMotors = 1;
       #else                                                   // RX UART2
         enableMotors              = commandR.enableMotors;            // ARDUINO      => Message enableMotors     => BOARD MASTER.
         controlMode               = commandR.controlMode;             // ARDUINO      => Message controlMode      => BOARD MASTER.
