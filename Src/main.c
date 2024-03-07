@@ -536,6 +536,7 @@ int main(void) {
     #ifdef BOARD_MASTER
     poweroffPressCheck();
     #endif
+    
     // ####### BEEP AND EMERGENCY POWEROFF #######
     if (TEMP_POWEROFF_ENABLE && board_temp_deg_c_Master && board_temp_deg_c_Slave  >= TEMP_POWEROFF && speedAvgAbs < 20){  // poweroff before mainboard burns OR low bat 3
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
