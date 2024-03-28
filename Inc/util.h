@@ -68,6 +68,7 @@
       int16_t   errCode;        // Master  <=> Slawe
       int16_t   enableFin;      // Master  <=> Slawe
       int16_t   chargeStatus;   // Master  <=> Slawe
+      uint8_t   cmdLed;         // Master  <=  Slawe
       uint16_t  checksum;       // 
     } SerialUart2;
   // #endif
@@ -141,8 +142,9 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
 #endif
 
 // Sideboard functions
-void sideboardLeds(uint8_t *leds);
+void Leds(uint8_t *leds);
 void sideboardSensors(uint8_t sensors);
+void handle_leds(void);
 
 // Poweroff Functions
 void saveConfig(void);

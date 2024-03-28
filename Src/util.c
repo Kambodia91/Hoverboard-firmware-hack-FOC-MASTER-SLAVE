@@ -189,6 +189,7 @@ typedef struct{
   int16_t   errCode;        // Slawe to Master
   int16_t   enableFin;      // Slave to Master
   int16_t   chargeStatus;   // Master to Slave
+  uint8_t   cmdLed;         // Master to Slave
   uint16_t  checksum;       // Master/Slave
 } SerialSend_Usart2;
 static SerialSend_Usart2 Send_Usart2;
@@ -197,9 +198,10 @@ static SerialSend_Usart2 Send_Usart2;
 #if defined(FEEDBACK_SERIAL_USART2)
 //static uint8_t sideboard_leds_L;
 #endif
-#if defined(FEEDBACK_SERIAL_USART1)
-static uint8_t sideboard_leds_R;
-#endif
+//#if defined(FEEDBACK_SERIAL_USART1)
+static uint8_t board_leds;
+uint8_t cmdLed;
+//#endif
 
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
 static uint8_t  rx_buffer_L[SERIAL_BUFFER_SIZE];      // USART Rx DMA circular buffer
@@ -913,6 +915,7 @@ void readInputRaw(void) {
         board_temp_deg_c_Master   = commandL.boardTemp;               // BOARD SLAVE    <= Message boardTemp          <= BOARD MASTER.
         errCode_Master            = commandL.errCode;                 // BOARD SLAVE    <= Message errCode            <= BOARD MASTER.
         chargeStatus              = commandL.chargeStatus;            // BOARD SLAVE    <= Message chargeStatus       <= BOARD MASTER.
+        cmdLed                    = commandL.cmdLed;
         #endif
         // Message Slave => Master
         #ifdef BOARD_MASTER                                           // RX UART2
@@ -1438,7 +1441,8 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
                           command_in->boardTemp ^   
                           command_in->errCode ^
                           command_in->enableFin ^
-                          command_in->chargeStatus);
+                          command_in->chargeStatus ^
+                          command_in->cmdLed);
                           
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
@@ -1496,7 +1500,7 @@ void usart1_tx_Send(void)
   Feedback.chargeStatus     = (int16_t)chargeStatus;                    // MASTER   => ChargeStatus            => ARDUINO.
         
   if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
-    Feedback.cmdLed     = (uint16_t)sideboard_leds_R;
+    Feedback.cmdLed     = (uint16_t)board_leds;
     Feedback.checksum   = (uint16_t) (Feedback.start ^ 
                                       Feedback.cmd1 ^ 
                                       Feedback.cmd2 ^ 
@@ -1530,6 +1534,7 @@ void usart2_tx_Send(void)
     Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
+    Send_Usart2.cmdLed            = (int16_t)board_leds;
   #endif
   //USART2 SLAVE => MASTER//
   #ifdef BOARD_SLAVE
@@ -1544,6 +1549,7 @@ void usart2_tx_Send(void)
     Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // SLAVE    => errCode           => MASTER.
     Send_Usart2.enableFin         = (int16_t)enableFinSlave;            // MASTER   => enableFinSlave   <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)0U;                        // SLAVE    => ChargeStatus      => MASTER.
+    Send_Usart2.cmdLed            = (int16_t)0U;
   #endif
         
   if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
@@ -1557,20 +1563,20 @@ void usart2_tx_Send(void)
                                         Send_Usart2.boardTemp ^
                                         Send_Usart2.errCode ^ 
                                         Send_Usart2.enableFin ^
-                                        Send_Usart2.chargeStatus);
+                                        Send_Usart2.chargeStatus ^
+                                        Send_Usart2.cmdLed);
     // TR USART2
     HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&Send_Usart2, sizeof(Send_Usart2));
   }
 }
 #endif
-/* =========================== Sideboard Functions =========================== */
+/* =========================== Leds Functions =========================== */
 
 /*
- * Sideboard LEDs Handling
+ * LEDs Handling
  * This function manages the leds behavior connected to the sideboard
  */
-void sideboardLeds(uint8_t *leds) {
-  #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
+void Leds(uint8_t *leds) {
     // Enable flag: use LED4 (bottom Blue)
     // enable == 1, turn on led
     // enable == 0, blink led
@@ -1634,7 +1640,28 @@ void sideboardLeds(uint8_t *leds) {
       *leds |= LED3_SET;
       *leds &= ~LED1_SET & ~LED2_SET;
     }
-  #endif
+
+}
+
+void handle_leds(void) {
+    //
+    #ifdef BOARD_MASTER
+      cmdLed = board_leds;
+    #endif
+
+    if (cmdLed & LED1_SET)    { HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET); }
+    if (cmdLed & LED2_SET)    { HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, GPIO_PIN_RESET); }
+    
+    #ifdef BOARD_SLAVE
+      if (cmdLed & LED3_SET)  { HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, GPIO_PIN_RESET); }
+      if (cmdLed & LED4_SET)  { HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET); }
+    #endif
+    
+    #ifdef BOARD_MASTER
+      if (cmdLed & LED5_SET)  { HAL_GPIO_WritePin(LED_PORT_1, LED_PIN_1, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_PORT_1, LED_PIN_1, GPIO_PIN_RESET); }
+    #endif
+      
+    //
 }
 
 /*
@@ -1803,10 +1830,10 @@ void poweroff(void) {
 void chargeCheck(void) {
   if(HAL_GPIO_ReadPin(CHARGER_PORT, CHARGER_PIN)) {
     chargeStatus = 0;
-    HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET);
+    // HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET);
   } else {
     chargeStatus = 1;
-    HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET);
+    // HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET);
   }
 }
 

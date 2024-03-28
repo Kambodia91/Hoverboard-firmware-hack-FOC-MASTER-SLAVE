@@ -135,6 +135,8 @@ int16_t cmdSlave;                               // global variable for Slave Com
   static uint16_t transpotter_counter = 0;
 #endif
 
+static uint8_t board_leds;
+
 #ifndef VARIANT_TRANSPOTTER
   static int16_t  speedMaster;                  // local variable for steering. -1000 to 1000
   static int16_t  speedSlave;                   // local variable for speed. -1000 to 1000
@@ -468,10 +470,12 @@ int main(void) {
     #if defined(SIDEBOARD_SERIAL_USART1)
       sideboardSensors((uint8_t)Sideboard_R.sensors);
     #endif
-    #if defined(FEEDBACK_SERIAL_USART1)
-      //sideboardLeds(&sideboard_leds_R);
+    // ####### LEDS HANDLING #######
+    #ifdef BOARD_MASTER
+    Leds(&board_leds);
     #endif
-    
+    handle_leds();  // Show Leds
+        
     // ####### CALC BOARD TEMPERATURE #######
     filtLowPass32(adc_buffer.temp, TEMP_FILT_COEF, &board_temp_adcFixdt);
     board_temp_adcFilt  = (int16_t)(board_temp_adcFixdt >> 16);  // convert fixed-point to integer
