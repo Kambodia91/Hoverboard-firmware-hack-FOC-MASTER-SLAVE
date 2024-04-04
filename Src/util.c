@@ -199,7 +199,7 @@ static SerialSend_Usart2 Send_Usart2;
 //static uint8_t sideboard_leds_L;
 #endif
 //#if defined(FEEDBACK_SERIAL_USART1)
-static uint8_t board_leds;
+extern uint8_t board_leds;
 uint8_t cmdLed;
 //#endif
 
@@ -1632,10 +1632,10 @@ void Leds(uint8_t *leds) {
     // Error handling
     // Critical error:  LED1 on (RED)     + high pitch beep (hadled in main)
     // Soft error:      LED3 on (YELLOW)  + low  pitch beep (hadled in main)
-    if (rtY_Motor.z_errCode) {
-      *leds |= LED1_SET;
-      *leds &= ~LED3_SET & ~LED2_SET;
-    }
+    // if (rtY_Motor.z_errCode) {
+    //   *leds |= LED1_SET;
+    //   *leds &= ~LED3_SET & ~LED2_SET;
+    // }
     if (timeoutFlgADC || timeoutFlgSerial) {
       *leds |= LED3_SET;
       *leds &= ~LED1_SET & ~LED2_SET;

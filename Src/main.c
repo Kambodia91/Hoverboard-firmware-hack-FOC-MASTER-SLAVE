@@ -135,7 +135,7 @@ int16_t cmdSlave;                               // global variable for Slave Com
   static uint16_t transpotter_counter = 0;
 #endif
 
-static uint8_t board_leds;
+uint8_t board_leds;
 
 #ifndef VARIANT_TRANSPOTTER
   static int16_t  speedMaster;                  // local variable for steering. -1000 to 1000

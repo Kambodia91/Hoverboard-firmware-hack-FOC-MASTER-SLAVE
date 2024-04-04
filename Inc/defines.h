@@ -194,7 +194,7 @@ void PWM_Init(void);
 void PWM_ISR_CH1_Callback(void);
 void PWM_ISR_CH2_Callback(void);
 
-// Sideboard definitions
+// Leds definitions
 #define LED1_SET            (0x01)
 #define LED2_SET            (0x02)
 #define LED3_SET            (0x04)
