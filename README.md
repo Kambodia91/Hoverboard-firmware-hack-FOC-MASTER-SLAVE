@@ -14,6 +14,7 @@ YOUTUBE:
 - [Driving test 02 4x4 new wheels](https://youtu.be/5k37qx_ut7Y?si=PjrUhJfBA4WDzB2Y).
 - [Drobiny test 03 with engine cutter](https://youtu.be/J5ug9tpqyGo?si=b4b2j3KFuMFDtWn7).
 - [Cuttint height adjustment](https://youtu.be/1qUQQXA1uOE?si=6t5uq69G1FAZiTjl).
+- [First cut grass](https://youtu.be/wi3ILRYedm8).
 
 ---
 
@@ -47,10 +48,10 @@ To do:
 - [x] Cutting height.
 - [x] Installation of the combustion engine.
 - [x] Making a hub to connect the alternator and the cutting knife.
-- [ ] Connecting the engine shaft with the alternator pulley with a multi-grooved belt.  
+- [x] Connecting the engine shaft with the alternator pulley with a multi-grooved belt.  
 - [ ] Converting a 12v alternator to 42v.  
-- [ ] Installing the alternator to the vehicle frame.
-- [ ] Selecting a remote control for manual control.
+- [x] Installing the alternator to the vehicle frame.
+- [x] Selecting a remote control for manual control.
 - [ ] Installation of a PIXHAWK controller for remote planning and autonomous mission
 - [ ] Combine the GPS system with RTK correction to obtain high spatial orientation accuracy
 - [ ] installation of sensors to avoid obstacles
