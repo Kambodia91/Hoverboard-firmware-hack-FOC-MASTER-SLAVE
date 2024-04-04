@@ -1632,10 +1632,12 @@ void Leds(uint8_t *leds) {
     // Error handling
     // Critical error:  LED1 on (RED)     + high pitch beep (hadled in main)
     // Soft error:      LED3 on (YELLOW)  + low  pitch beep (hadled in main)
-    // if (rtY_Motor.z_errCode) {
-    //   *leds |= LED1_SET;
-    //   *leds &= ~LED3_SET & ~LED2_SET;
-    // }
+   
+    if (errCode_Master || errCode_Slave) {
+      *leds |= LED1_SET;
+      *leds &= ~LED3_SET & ~LED2_SET;
+    }
+
     if (timeoutFlgADC || timeoutFlgSerial) {
       *leds |= LED3_SET;
       *leds &= ~LED1_SET & ~LED2_SET;
