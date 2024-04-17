@@ -15,6 +15,7 @@ YOUTUBE:
 - [Drobiny test 03 with engine cutter](https://youtu.be/J5ug9tpqyGo?si=b4b2j3KFuMFDtWn7).
 - [Cuttint height adjustment](https://youtu.be/1qUQQXA1uOE?si=6t5uq69G1FAZiTjl).
 - [First cut grass](https://youtu.be/wi3ILRYedm8).
+- [Alternator test V2](https://youtu.be/FKU_qiIISn4?si=lAowgcrbQPj_U_Ar).
 
 ---
 
@@ -49,7 +50,7 @@ To do:
 - [x] Installation of the combustion engine.
 - [x] Making a hub to connect the alternator and the cutting knife.
 - [x] Connecting the engine shaft with the alternator pulley with a multi-grooved belt.  
-- [ ] Converting a 12v alternator to 42v.  
+- [x] Converting a 12v alternator to 42v.  
 - [x] Installing the alternator to the vehicle frame.
 - [x] Selecting a remote control for manual control.
 - [ ] Installation of a PIXHAWK controller for remote planning and autonomous mission
