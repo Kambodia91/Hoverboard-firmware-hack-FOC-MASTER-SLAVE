@@ -121,6 +121,7 @@ void DMA1_Channel1_IRQHandler(void) {
 
   // Create square wave for buzzer
   buzzerTimer++;
+  #ifdef BUZZER_ENA
   if (buzzerFreq != 0 && (buzzerTimer / 5000) % (buzzerPattern + 1) == 0) {
     if (buzzerPrev == 0) {
       buzzerPrev = 1;
@@ -139,7 +140,7 @@ void DMA1_Channel1_IRQHandler(void) {
       #endif
       buzzerPrev = 0;
   }
-
+  #endif
   // Adjust pwm_margin depending on the selected Control Type
   if (rtP_Motor.z_ctrlTypSel == FOC_CTRL) {
     pwm_margin = 110;

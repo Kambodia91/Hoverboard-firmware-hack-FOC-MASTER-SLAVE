@@ -41,6 +41,8 @@ pb10 usart1 dma1 channel2/3
 
 TIM_HandleTypeDef htim_Motor;
 TIM_HandleTypeDef htim_Adc;
+
+
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
@@ -53,7 +55,12 @@ DMA_HandleTypeDef hdma_usart2_rx;
 DMA_HandleTypeDef hdma_usart2_tx;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
+
 volatile adc_buf_t adc_buffer;
+
+
+TIM_HandleTypeDef htim4;
+DMA_HandleTypeDef hdma_tim4_ch2;
 
 
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
@@ -117,6 +124,7 @@ void UART1_Init(void)
 void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
+  //#ifdef BOARD_MASTER
   if(uartHandle->Instance==USART1)
   {
   /* USER CODE END USART1_MspInit 0 */
@@ -172,8 +180,12 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   /* USER CODE BEGIN USART1_MspInit 1 */
 	__HAL_UART_ENABLE_IT (uartHandle, UART_IT_IDLE);  // Enable the USART IDLE line detection interrupt
   /* USER CODE END USART1_MspInit 1 */
+  
   }
-  else if(uartHandle->Instance==USART2)
+  
+  else 
+  //#endif
+  if(uartHandle->Instance==USART2)
   {
   /* USER CODE BEGIN USART2_MspInit 0 */
 
@@ -233,7 +245,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 
 void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 {
-
+  
   if(uartHandle->Instance==USART2)
   {
   /* USER CODE BEGIN USART2_MspDeInit 0 */
@@ -258,6 +270,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
   /* USER CODE END USART2_MspDeInit 1 */
   }
+  //#ifdef BOARD_MASTER
   else if(uartHandle->Instance==USART1)
   {
   /* USER CODE BEGIN USART1_MspDeInit 0 */
@@ -282,7 +295,96 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
   /* USER CODE END USART1_MspDeInit 1 */
   }
+  //#endif
 } 
+#endif
+#if defined(WS2812B_ENA) && defined(BOARD_SLAVE)
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
+{
+  if(htim_base->Instance==TIM4)
+  {
+  /* USER CODE BEGIN TIM4_MspDeInit 0 */
+
+  /* USER CODE END TIM4_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM4_CLK_DISABLE();
+
+    /* TIM4 DMA DeInit */
+    HAL_DMA_DeInit(htim_base->hdma[TIM_DMA_ID_CC2]);
+  /* USER CODE BEGIN TIM4_MspDeInit 1 */
+
+  /* USER CODE END TIM4_MspDeInit 1 */
+  }
+
+}
+
+void WS2812B_Init(void) {
+  /* Initialise TIM4_CH2 GPIO pins
+  *  TIM4_CH2 GPIO Configuration
+  *  PB7     ------> Data Ws2812B
+  */
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  // Inicjalizacja TIM4 dla PWM na PB7 (TIM4_CH2)
+
+
+  // Włącz zegar dla TIM4
+  __HAL_RCC_TIM4_CLK_ENABLE();
+
+  // Konfiguracja TIM4
+  TIM_ClockConfigTypeDef sClockSourceConfig4 = {0};
+  TIM_MasterConfigTypeDef sMasterConfig4 = {0};
+  TIM_OC_InitTypeDef sConfigOC4 = {0};
+
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 0;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 80-1;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  HAL_TIM_Base_Init(&htim4);
+
+  sClockSourceConfig4.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig4);
+  HAL_TIM_PWM_Init(&htim4);
+
+  sMasterConfig4.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig4.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig4);
+
+  sConfigOC4.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC4.Pulse = 0;
+  sConfigOC4.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC4.OCFastMode = TIM_OCFAST_DISABLE;
+  HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC4, TIM_CHANNEL_2);
+
+  /* Peripheral DMA init*/
+  /* TIM4 DMA Init */
+  /* TIM4_CH2 Init */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  hdma_tim4_ch2.Instance = DMA1_Channel4;
+  hdma_tim4_ch2.Init.Direction = DMA_MEMORY_TO_PERIPH;
+  hdma_tim4_ch2.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_tim4_ch2.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_tim4_ch2.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  hdma_tim4_ch2.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+  hdma_tim4_ch2.Init.Mode = DMA_NORMAL;
+  hdma_tim4_ch2.Init.Priority = DMA_PRIORITY_LOW;
+  HAL_DMA_Init(&hdma_tim4_ch2);
+
+  __HAL_LINKDMA(&htim4,hdma[TIM_DMA_ID_CC2],hdma_tim4_ch2);
+
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+
+}
 #endif
 
 DMA_HandleTypeDef hdma_i2c2_rx;
@@ -379,30 +481,30 @@ void MX_GPIO_Init(void) {
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
 
 
-  GPIO_InitStruct.Pin = MOTOR_HALL_U_PIN;
-  HAL_GPIO_Init(MOTOR_HALL_U_PORT, &GPIO_InitStruct);   // HALL
-  GPIO_InitStruct.Pin = MOTOR_HALL_V_PIN;
+  GPIO_InitStruct.Pin = MOTOR_HALL_U_PIN;               // PB0 HALL A
+  HAL_GPIO_Init(MOTOR_HALL_U_PORT, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = MOTOR_HALL_V_PIN;               // PA6 HALL B
   HAL_GPIO_Init(MOTOR_HALL_V_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_HALL_W_PIN;
+  GPIO_InitStruct.Pin = MOTOR_HALL_W_PIN;               // PA7 HALL C
   HAL_GPIO_Init(MOTOR_HALL_W_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TIM_BKIN_PIN;             // BKIN PIN
-  HAL_GPIO_Init(MOTOR_TIM_BKIN_PORT, &GPIO_InitStruct); // BKIN PORT
+  GPIO_InitStruct.Pin = MOTOR_TIM_BKIN_PIN;             // PB12 BKIN
+  HAL_GPIO_Init(MOTOR_TIM_BKIN_PORT, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   
   
-  GPIO_InitStruct.Pin = CHARGER_PIN;                  // Charger
+  GPIO_InitStruct.Pin = CHARGER_PIN;                  // PC15 Charger
   HAL_GPIO_Init(CHARGER_PORT, &GPIO_InitStruct);
   
 
   GPIO_InitStruct.Pull = GPIO_NOPULL;
 
 
-  GPIO_InitStruct.Pin = BUTTON_PIN;                   // Power Switch
+  GPIO_InitStruct.Pin = BUTTON_PIN;                   // PB10 Power Switch
   HAL_GPIO_Init(BUTTON_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = BUTTON1_PIN;                  // Button1 (closer to the speaker)
+  GPIO_InitStruct.Pin = BUTTON1_PIN;                  // PA11 Button1 (closer to the speaker)
   HAL_GPIO_Init(BUTTON1_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = BUTTON2_PIN;                  // Button2 
+  GPIO_InitStruct.Pin = BUTTON2_PIN;                  // PC13 Button2 
   HAL_GPIO_Init(BUTTON2_PORT, &GPIO_InitStruct);
 
 
@@ -410,63 +512,64 @@ void MX_GPIO_Init(void) {
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 
 
-  GPIO_InitStruct.Pin = LED_RED_PIN;                  // PB4
+  GPIO_InitStruct.Pin = LED_RED_PIN;                  // PB4 Led Red (12V)
   HAL_GPIO_Init(LED_RED_PORT, &GPIO_InitStruct);
   HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, RESET);
-  GPIO_InitStruct.Pin = LED_GREEN_PIN;                // PB3
+  GPIO_InitStruct.Pin = LED_GREEN_PIN;                // PB3 LED Green (12V)
   HAL_GPIO_Init(LED_GREEN_PORT, &GPIO_InitStruct);
   HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, RESET);
   #ifdef BOARD_SLAVE
-  GPIO_InitStruct.Pin = LED_ORANGE_PIN;               // PA15
+  GPIO_InitStruct.Pin = LED_ORANGE_PIN;               // PA15 LED Orange (12V)
   HAL_GPIO_Init(LED_ORANGE_PORT, &GPIO_InitStruct);
   HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, RESET);
   #endif  
-  GPIO_InitStruct.Pin = LED_PIN;
+  GPIO_InitStruct.Pin = LED_PIN;                      // PB5 Out Mosfet (12V)
   HAL_GPIO_Init(LED_PORT, &GPIO_InitStruct);
   #ifdef BOARD_MASTER
-  GPIO_InitStruct.Pin = LED_PIN_1;
+  GPIO_InitStruct.Pin = LED_PIN_1;                    // PB8 Out Mosfet (12V)
   HAL_GPIO_Init(LED_PORT_1, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = BUZZER_PIN;
+  GPIO_InitStruct.Pin = BUZZER_PIN;                   // PB9 Buzzer
   HAL_GPIO_Init(BUZZER_PORT, &GPIO_InitStruct);
   #endif
-  GPIO_InitStruct.Pin = OFF_PIN;
+  GPIO_InitStruct.Pin = OFF_PIN;                      // PB2 Latch Mosfet
   HAL_GPIO_Init(OFF_PORT, &GPIO_InitStruct);
 
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 
 
-  GPIO_InitStruct.Pin = MOTOR_DC_CUR_PIN;
+  GPIO_InitStruct.Pin = MOTOR_DC_CUR_PIN;             // PA5 Current batery
   HAL_GPIO_Init(MOTOR_DC_CUR_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_U_CUR_PIN;
+  GPIO_InitStruct.Pin = MOTOR_U_CUR_PIN;              // PA0 Current phase W  (Y)
   HAL_GPIO_Init(MOTOR_U_CUR_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_V_CUR_PIN;
+  GPIO_InitStruct.Pin = MOTOR_V_CUR_PIN;              // PA1 Current phase V  (G)
   HAL_GPIO_Init(MOTOR_V_CUR_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = DCLINK_PIN;
+  GPIO_InitStruct.Pin = DCLINK_PIN;                   // PA4 Voltage batery
   HAL_GPIO_Init(DCLINK_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TEMP_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TEMP_PIN;               // PB1 White wire motor
   HAL_GPIO_Init(MOTOR_TEMP_PORT, &GPIO_InitStruct);
 
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 
 
-  GPIO_InitStruct.Pin = MOTOR_TIM_UH_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TIM_UH_PIN;             // PA8 Out mosfet phase high U  (B)
   HAL_GPIO_Init(MOTOR_TIM_UH_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TIM_VH_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TIM_VH_PIN;             // PA9 Out mosfet phase high V  (G)
   HAL_GPIO_Init(MOTOR_TIM_VH_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TIM_WH_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TIM_WH_PIN;             // PA10 Out mosfet phase high W (Y)
   HAL_GPIO_Init(MOTOR_TIM_WH_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TIM_UL_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TIM_UL_PIN;             // PB13 Out mosfet phase low U  (B)
   HAL_GPIO_Init(MOTOR_TIM_UL_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TIM_VL_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TIM_VL_PIN;             // PB14 Out mosfet phase low V  (G)
   HAL_GPIO_Init(MOTOR_TIM_VL_PORT, &GPIO_InitStruct);
-  GPIO_InitStruct.Pin = MOTOR_TIM_WL_PIN;
+  GPIO_InitStruct.Pin = MOTOR_TIM_WL_PIN;             // PB15 Out mosfet phase low W  (Y)
   HAL_GPIO_Init(MOTOR_TIM_WL_PORT, &GPIO_InitStruct);
 }
 
 void MX_TIM_Init(void) {
   __HAL_RCC_TIM1_CLK_ENABLE();
   __HAL_RCC_TIM3_CLK_ENABLE();
+ 
   TIM_MasterConfigTypeDef sMasterConfig;
   TIM_OC_InitTypeDef sConfigOC;
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
@@ -524,7 +627,7 @@ void MX_TIM_Init(void) {
 
   // Start counting >0 to effectively offset timers by the time it takes for one ADC conversion to complete.
   // This method allows that the Phase currents ADC measurements are properly aligned with LOW-FET ON region for both motors
-  ADC_TIM->CNT 		     = ADC_TOTAL_CONV_TIME;
+  ADC_TIM->CNT 		       = ADC_TOTAL_CONV_TIME;
 
   sConfigOC.OCMode       = TIM_OCMODE_PWM1;
   sConfigOC.Pulse        = 0;

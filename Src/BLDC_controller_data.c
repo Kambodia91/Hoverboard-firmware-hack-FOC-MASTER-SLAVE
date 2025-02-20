@@ -222,7 +222,7 @@ P rtP_Motor = {
   /* Variable: a_phaAdvMax
    * Referenced by: '<S42>/a_phaAdvMax'
    */
-  400,
+  400, 
 
   /* Variable: i_max
    * Referenced by:

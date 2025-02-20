@@ -56,7 +56,7 @@ void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
 void DMA1_Channel1_IRQHandler(void);  // ADC 1/2
-void DMA1_Channel4_IRQHandler(void);  // Uart1 TX
+void DMA1_Channel4_IRQHandler(void);  // Uart1 TX OR Ws2812b
 void DMA1_Channel5_IRQHandler(void);  // Uart1 RX
 void DMA1_Channel6_IRQHandler(void);  // Uart2 RX
 void DMA1_Channel7_IRQHandler(void);  // Uart2 TX

@@ -68,7 +68,7 @@
       int16_t   errCode;        // Master  <=> Slawe
       int16_t   enableFin;      // Master  <=> Slawe
       int16_t   chargeStatus;   // Master  <=> Slawe
-      uint8_t   cmdLed;         // Master  <=  Slawe
+      uint16_t  cmdLed;         // Master  <=  Slawe
       uint16_t  checksum;       // 
     } SerialUart2;
   // #endif
@@ -103,6 +103,8 @@ void BLDC_Init(void);
 void Input_Lim_Init(void);
 void Input_Init(void);
 void UART_DisableRxErrors(UART_HandleTypeDef *huart);
+
+
 
 // General Functions
 void poweronMelody(void);
@@ -142,9 +144,19 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
 #endif
 
 // Sideboard functions
-void Leds(uint8_t *leds);
+void Leds(uint16_t *leds);
 void sideboardSensors(uint8_t sensors);
 void handle_leds(void);
+
+// Diode Ws2812b
+#if defined(WS2812B_ENA)
+void Set_LED_OFF();
+void Set_LED (int LEDnum, int Red, int Green, int Blue);
+void WS2812_Send (void);
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim);
+void HSVtoRGB(float hue, float saturation, float value, uint8_t* red, uint8_t* green, uint8_t* blue);
+void UpdateHueEffect();
+#endif
 
 // Poweroff Functions
 void saveConfig(void);

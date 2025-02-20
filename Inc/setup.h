@@ -28,7 +28,8 @@
 void MX_GPIO_Init(void);
 void MX_TIM_Init(void);
 void MX_ADC1_Init(void);
-void MX_ADC2_Init(void); 
+void MX_ADC2_Init(void);
+void WS2812B_Init(void);   // Led slave board pin PB7 Tim4_ch2 Dma1_ch4 
 void UART1_Init(void);
 void UART2_Init(void);
 

@@ -64,9 +64,30 @@
 // #define BOARD_MASTER                      // board master 
 #define BOARD_SLAVE                       // board slave
 
+// Enable/Disable Motor
+#define MOTOR_ENA                       // [-] Enable motor. Comment-out if this motor is not needed to be operational
+
 // ######################## END OF BOARD VARIANT ###############################
 
-// ############################### BATTERY ###############################
+// ############################### LED WS2812B #################################
+#ifdef BOARD_SLAVE
+  #define WS2812B_ENA                     // SLAVE    => WS2812B
+#endif
+
+#define MAX_LED                 9         // 9 leds // 1 Led = 56 Byte size of memory.
+// #define WS2812B_TEST
+// Constants for effect configuration
+#define HUE_STEP                0.3f      // Hue changes update (0.0 - 360.0)
+#define SATURATION              1.0f      // Constant saturation (0.0 - 1.0)
+#define BRIGHTNESS              1.0f      // Constant brightness (0.0 - 1.0)
+
+// ######################## END OF LED WS2812B ###############################
+
+// ######################## BUZZER ###########################################
+#define BUZZER_ENA                        // Uncomment to turn off the buzzer
+// ######################## END OF BUZZER ####################################
+
+// ############################### BATTERY ###################################
 /* Battery voltage calibration: connect power source.
  * see How to calibrate.
  * Write debug output value nr 5 to BAT_CALIB_ADC. make and flash firmware.
@@ -143,7 +164,7 @@
 #define TRQ_MODE        3               // [-] TORQUE mode
 
 // Enable/Disable Motor
-#define MOTOR_ENA                       // [-] Enable motor. Comment-out if this motor is not needed to be operational
+// #define MOTOR_ENA                       // [-] Enable motor. Comment-out if this motor is not needed to be operational
 
 // Control selections
 #define CTRL_TYP_SEL    FOC_CTRL        // [-] Control type selection: COM_CTRL, SIN_CTRL, FOC_CTRL (default)
@@ -321,16 +342,16 @@
   // #define DEBUG_SERIAL_USART1           // 
  
   #ifdef BOARD_MASTER
-  #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
-  #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
+    #define CONTROL_SERIAL_USART2  0    // SLAVE    => MASTER
+    #define FEEDBACK_SERIAL_USART2      // MASTER   => SLAVE
 
-  #define CONTROL_SERIAL_USART1  0    // ARDUINO  => MASTER  // check the hoverSerial.ino
-  #define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
+    #define CONTROL_SERIAL_USART1  0    // ARDUINO  => MASTER  // check the hoverSerial.ino
+    #define FEEDBACK_SERIAL_USART1      // ARDUINO  => MASTER  // check the hoverSerial.ino
   #endif
 
   #ifdef BOARD_SLAVE
-  #define CONTROL_SERIAL_USART2  0    // MASTER   => SLAVE
-  #define FEEDBACK_SERIAL_USART2      // SLAVE    => MASTER
+    #define CONTROL_SERIAL_USART2  0    // MASTER   => SLAVE
+    #define FEEDBACK_SERIAL_USART2      // SLAVE    => MASTER
   #endif
 
   #define PRI_INPUT1             3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
@@ -712,6 +733,14 @@
   #error BOARD_SLAVE and BOARD_MASTER not allowed, choose one.
 #endif
 
+#if defined(WS2812B_ENA) && defined(CONTROL_SERIAL_USART1)  
+  #error WS2812B_ENA and CONTROL_SERIAL_USART1 not allowed, choose one.
+#endif
+
+#if defined(WS2812B_ENA) &&  defined(FEEDBACK_SERIAL_USART1) 
+  #error WS2812B_ENA and FEEDBACK_SERIAL_USART1 not allowed, choose one.
+#endif
+
 #if defined(CONTROL_SERIAL_USART2) && defined(SIDEBOARD_SERIAL_USART2)
   #error CONTROL_SERIAL_USART2 and SIDEBOARD_SERIAL_USART2 not allowed, choose one.
 #endif
@@ -790,6 +819,10 @@
 
 #if defined(DEBUG_I2C_LCD) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error DEBUG_I2C_LCD and SERIAL_USART1 not allowed. It is on the same cable.
+#endif
+
+#if defined(WS2812B_ENA) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+  #error WS2812B_ENA and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
 #if defined(SUPPORT_BUTTONS_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))

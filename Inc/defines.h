@@ -194,12 +194,18 @@ void PWM_Init(void);
 void PWM_ISR_CH1_Callback(void);
 void PWM_ISR_CH2_Callback(void);
 
-// Leds definitions
-#define LED1_SET            (0x01)
-#define LED2_SET            (0x02)
-#define LED3_SET            (0x04)
-#define LED4_SET            (0x08)
-#define LED5_SET            (0x10)
+// Leds definitions                                                           M   |   S   
+#define LED1_SET            (0x01)  // Włącznik                             | L8  | L9  |
+#define LED2_SET            (0x02)  // Enable Slave                         | L7  | L6  |
+#define LED3_SET            (0x04)  // Enable Master                        | L4  | L5  |
+#define LED4_SET            (0x08)  // Critical error Master                | L3  | L2  |
+#define LED5_SET            (0x10)  // Critical error Slave                 |SWITCH L1  |
+
+#define LED6_SET            (0x20)  // TimeoutFlgADC Slave
+#define LED7_SET            (0x40)  // TimeoutFlgADC Master
+#define LED8_SET            (0x80)  // timeoutFlgSerial Master
+#define LED9_SET            (0x100) // timeoutFlgSerial Slave
+
 #define SENSOR1_SET         (0x01)
 #define SENSOR2_SET         (0x02)
 #define SENSOR_MPU          (0x04)

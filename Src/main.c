@@ -32,6 +32,7 @@
 #include "rtwtypes.h"
 #include "comms.h"
 
+
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 #include "hd44780.h"
 #endif
@@ -113,6 +114,8 @@ extern int16_t board_temp_deg_c_Master;         // global variable for calibrate
 extern int16_t board_temp_deg_c_Slave;          // global variable for calibrated temperature in degrees Celsius
 extern int16_t errCode_Master;
 extern int16_t errCode_Slave;
+extern uint16_t cmdLed;
+
 
 int16_t motor_dc_curr;                          // global variable for Right DC Link current
 int16_t dc_curr;                                // global variable for Total DC Link current 
@@ -135,7 +138,7 @@ int16_t cmdSlave;                               // global variable for Slave Com
   static uint16_t transpotter_counter = 0;
 #endif
 
-uint8_t board_leds;
+//uint8_t board_leds;
 
 #ifndef VARIANT_TRANSPOTTER
   static int16_t  speedMaster;                  // local variable for steering. -1000 to 1000
@@ -186,32 +189,31 @@ int main(void) {
 
   SystemClock_Config();
 
-/* GPIO Remap */
+  /* GPIO Remap */
   __HAL_AFIO_REMAP_SWJ_NOJTAG();        // Disable = JNRST, JTDO, JTDI. Enable = PIN PB4, PB3, PA15.
-  
   __HAL_RCC_DMA1_CLK_DISABLE();
 
   MX_GPIO_Init();
-  MX_TIM_Init();
+  MX_TIM_Init();  
   MX_ADC1_Init();
   MX_ADC2_Init();
   BLDC_Init();        // BLDC Controller Init
 
+  #ifdef WS2812B_ENA
+    WS2812B_Init();
+  #endif
 
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_SET);   // Activate Latch
   Input_Lim_Init();   // Input Limitations Init
   Input_Init();       // Input Init
- 
-
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
 
-
+  #ifdef BOARD_MASTER
   poweronMelody();
+  cmdLed |= LED1_SET; // Power switch LED GREEN
+  #endif
 
-
-  HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
-  
   int32_t board_temp_adcFixdt = adc_buffer.temp << 16;  // Fixed-point filter output initialized with current ADC converted to fixed-point
   int16_t board_temp_adcFilt  = adc_buffer.temp;
 
@@ -266,7 +268,7 @@ int main(void) {
           beepShort(4); HAL_Delay(100);
         #endif
         speedMasterFixdt = speedSlaveFixdt = 0;      // reset filters
-        enable = 1;                       // enable motors
+        enable = 1;                       // enable motor
         #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("-- Motors enabled --\r\n");
         #endif
@@ -470,12 +472,11 @@ int main(void) {
     #if defined(SIDEBOARD_SERIAL_USART1)
       sideboardSensors((uint8_t)Sideboard_R.sensors);
     #endif
+
     // ####### LEDS HANDLING #######
-    #ifdef BOARD_MASTER
-    Leds(&board_leds);
-    #endif
+    Leds(&cmdLed);
     handle_leds();  // Show Leds
-        
+
     // ####### CALC BOARD TEMPERATURE #######
     filtLowPass32(adc_buffer.temp, TEMP_FILT_COEF, &board_temp_adcFixdt);
     board_temp_adcFilt  = (int16_t)(board_temp_adcFixdt >> 16);  // convert fixed-point to integer
@@ -534,10 +535,10 @@ int main(void) {
     // ####### CHARGE PORT CHECK #######
     #ifdef BOARD_MASTER
     chargeCheck();
-    #endif
+    
     
     // ####### POWEROFF BY POWER-BUTTON #######
-    #ifdef BOARD_MASTER
+    
     poweroffPressCheck();
     #endif
     
@@ -579,7 +580,7 @@ int main(void) {
     inactivity_timeout_counter++;
 
     // ####### INACTIVITY TIMEOUT #######
-    if (abs(cmdMaster) > 50 || abs(cmdSlave) > 50) {
+    if (abs(cmdMaster) > 20 || abs(cmdSlave) > 20) {
       inactivity_timeout_counter = 0;
     }
 
@@ -593,7 +594,7 @@ int main(void) {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Powering off, wheels were inactive for too long\r\n");
       #endif
-      poweroff();
+      // poweroff();
     }
 
 

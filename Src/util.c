@@ -31,6 +31,9 @@
 #include "rtwtypes.h"
 #include "comms.h"
 
+#include <math.h> // hue
+
+
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 #include "hd44780.h"
 #endif
@@ -44,6 +47,9 @@ extern volatile adc_buf_t adc_buffer;
 
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart1;
+
+extern TIM_HandleTypeDef htim4;
+extern DMA_HandleTypeDef hdma_tim4_ch2;
 
 extern int16_t batVoltage;
 extern uint8_t backwardDrive;
@@ -68,6 +74,7 @@ extern volatile uint16_t ppm_captured_value[PPM_NUM_CHANNELS+1];
 extern volatile uint16_t pwm_captured_ch1_value;
 extern volatile uint16_t pwm_captured_ch2_value;
 #endif
+
 
 
 //------------------------------------------------------------------------
@@ -121,6 +128,23 @@ int16_t chargeStatus;                   // Status charge connection.
 int16_t controlMode;
 uint8_t ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
+
+
+uint16_t pwmData[(24*MAX_LED)+50];
+uint8_t LED_Data[MAX_LED][4];
+uint8_t LED_Mod[MAX_LED][4];  // for brightness
+uint16_t mask = LED1_SET | LED3_SET | LED4_SET | LED7_SET | LED8_SET;
+volatile uint8_t dma_ready = 1;
+
+//uint8_t datasentflag;
+uint32_t currentTime;
+// Zmienna globalna dla efektu
+#if defined(WS2812B_TEST)
+static uint32_t lastUpdateTime = 0;  // Czas ostatniej aktualizacji
+
+#endif
+
+
 
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 LCD_PCF8574_HandleTypeDef lcd;
@@ -189,7 +213,7 @@ typedef struct{
   int16_t   errCode;        // Slawe to Master
   int16_t   enableFin;      // Slave to Master
   int16_t   chargeStatus;   // Master to Slave
-  uint8_t   cmdLed;         // Master to Slave
+  uint16_t   cmdLed;         // Master to Slave
   uint16_t  checksum;       // Master/Slave
 } SerialSend_Usart2;
 static SerialSend_Usart2 Send_Usart2;
@@ -199,8 +223,8 @@ static SerialSend_Usart2 Send_Usart2;
 //static uint8_t sideboard_leds_L;
 #endif
 //#if defined(FEEDBACK_SERIAL_USART1)
-extern uint8_t board_leds;
-uint8_t cmdLed;
+//extern uint8_t board_leds;
+uint16_t cmdLed = {0};
 //#endif
 
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
@@ -915,7 +939,9 @@ void readInputRaw(void) {
         board_temp_deg_c_Master   = commandL.boardTemp;               // BOARD SLAVE    <= Message boardTemp          <= BOARD MASTER.
         errCode_Master            = commandL.errCode;                 // BOARD SLAVE    <= Message errCode            <= BOARD MASTER.
         chargeStatus              = commandL.chargeStatus;            // BOARD SLAVE    <= Message chargeStatus       <= BOARD MASTER.
-        cmdLed                    = commandL.cmdLed;
+        //cmdLed                    = commandL.cmdLed;
+        cmdLed = (cmdLed & ~mask) | (commandL.cmdLed & mask);
+
         #endif
         // Message Slave => Master
         #ifdef BOARD_MASTER                                           // RX UART2
@@ -1500,7 +1526,7 @@ void usart1_tx_Send(void)
   Feedback.chargeStatus     = (int16_t)chargeStatus;                    // MASTER   => ChargeStatus            => ARDUINO.
         
   if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
-    Feedback.cmdLed     = (uint16_t)board_leds;
+    Feedback.cmdLed     = (uint16_t)cmdLed;
     Feedback.checksum   = (uint16_t) (Feedback.start ^ 
                                       Feedback.cmd1 ^ 
                                       Feedback.cmd2 ^ 
@@ -1534,7 +1560,7 @@ void usart2_tx_Send(void)
     Send_Usart2.errCode           = (int16_t)rtY_Motor.z_errCode;       // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
-    Send_Usart2.cmdLed            = (int16_t)board_leds;
+    Send_Usart2.cmdLed            = (int16_t)cmdLed;
   #endif
   //USART2 SLAVE => MASTER//
   #ifdef BOARD_SLAVE
@@ -1576,27 +1602,12 @@ void usart2_tx_Send(void)
  * LEDs Handling
  * This function manages the leds behavior connected to the sideboard
  */
-void Leds(uint8_t *leds) {
-    // Enable flag: use LED4 (bottom Blue)
-    // enable == 1, turn on led
-    // enable == 0, blink led
-    if (enable) {
-      *leds |= LED4_SET;
-    } else if (!enable && (main_loop_counter % 20 == 0)) {
-      *leds ^= LED4_SET;
-    }
-
-    // Backward Drive: use LED5 (upper Blue)
-    // backwardDrive == 1, blink led
-    // backwardDrive == 0, turn off led
-    if (backwardDrive && (main_loop_counter % 50 == 0)) {
-      *leds ^= LED5_SET;
-    }
-
+void Leds(uint16_t *leds) {
+    
+    #ifdef VARIANT_HOVERCAR
     // Brake: use LED5 (upper Blue)
     // brakePressed == 1, turn on led
     // brakePressed == 0, turn off led
-    #ifdef VARIANT_HOVERCAR
       if (brakePressed) {
         *leds |= LED5_SET;
       } else if (!brakePressed && !backwardDrive) {
@@ -1605,66 +1616,234 @@ void Leds(uint8_t *leds) {
     #endif
 
     // Battery Level Indicator: use LED1, LED2, LED3
-    if (main_loop_counter % BAT_BLINK_INTERVAL == 0) {              //  | RED (LED1) | YELLOW (LED3) | GREEN (LED2) |
-      if (batVoltage < BAT_DEAD) {                                  //  |     0      |       0       |      0       |
-        *leds &= ~LED1_SET & ~LED3_SET & ~LED2_SET;
-      } else if (batVoltage < BAT_LVL1) {                           //  |     B      |       0       |      0       |
-        *leds ^= LED1_SET;
-        *leds &= ~LED3_SET & ~LED2_SET;
-      } else if (batVoltage < BAT_LVL2) {                           //  |     1      |       0       |      0       |
-        *leds |= LED1_SET;
-        *leds &= ~LED3_SET & ~LED2_SET;
-      } else if (batVoltage < BAT_LVL3) {                           //  |     0      |       B       |      0       |
-        *leds ^= LED3_SET;
-        *leds &= ~LED1_SET & ~LED2_SET;
-      } else if (batVoltage < BAT_LVL4) {                           //  |     0      |       1       |      0       |
-        *leds |= LED3_SET;
-        *leds &= ~LED1_SET & ~LED2_SET;
-      } else if (batVoltage < BAT_LVL5) {                           //  |     0      |       0       |      B       |
-        *leds ^= LED2_SET;
-        *leds &= ~LED1_SET & ~LED3_SET;
-      } else {                                                      //  |     0      |       0       |      1       |
-        *leds |= LED2_SET;
-        *leds &= ~LED1_SET & ~LED3_SET;
-      }
-    }
+    // if (main_loop_counter % BAT_BLINK_INTERVAL == 0) {              //  | RED (LED1) | YELLOW (LED3) | GREEN (LED2) |
+    //   if (batVoltage < BAT_DEAD) {                                  //  |     0      |       0       |      0       |
+    //     *leds &= ~LED1_SET & ~LED3_SET & ~LED2_SET;
+    //   } else if (batVoltage < BAT_LVL1) {                           //  |     B      |       0       |      0       |
+    //     *leds ^= LED1_SET;
+    //     *leds &= ~LED3_SET & ~LED2_SET;
+    //   } else if (batVoltage < BAT_LVL2) {                           //  |     1      |       0       |      0       |
+    //     *leds |= LED1_SET;
+    //     *leds &= ~LED3_SET & ~LED2_SET;
+    //   } else if (batVoltage < BAT_LVL3) {                           //  |     0      |       B       |      0       |
+    //     *leds ^= LED3_SET;
+    //     *leds &= ~LED1_SET & ~LED2_SET;
+    //   } else if (batVoltage < BAT_LVL4) {                           //  |     0      |       1       |      0       |
+    //     *leds |= LED3_SET;
+    //     *leds &= ~LED1_SET & ~LED2_SET;
+    //   } else if (batVoltage < BAT_LVL5) {                           //  |     0      |       0       |      B       |
+    //     *leds ^= LED2_SET;
+    //     *leds &= ~LED1_SET & ~LED3_SET;
+    //   } else {                                                      //  |     0      |       0       |      1       |
+    //     *leds |= LED2_SET;
+    //     *leds &= ~LED1_SET & ~LED3_SET;
+    //   }
+    // }
 
     // Error handling
     // Critical error:  LED1 on (RED)     + high pitch beep (hadled in main)
     // Soft error:      LED3 on (YELLOW)  + low  pitch beep (hadled in main)
-   
-    if (errCode_Master || errCode_Slave) {
-      *leds |= LED1_SET;
-      *leds &= ~LED3_SET & ~LED2_SET;
-    }
-
-    if (timeoutFlgADC || timeoutFlgSerial) {
+  #ifdef BOARD_MASTER
+    // Enable flag: use LED4 (bottom Blue)
+    // enable == 1, turn on led
+    // enable == 0, blink led
+    if (enableFinMaster) {
       *leds |= LED3_SET;
-      *leds &= ~LED1_SET & ~LED2_SET;
+    } else if (!enableFinMaster && (main_loop_counter % 90 == 0)) {
+      *leds ^= LED3_SET;
     }
 
+    // Backward Drive: use LED5 (upper Blue)
+    // backwardDrive == 1, blink led
+    // backwardDrive == 0, turn off led
+    // if (backwardDrive && (main_loop_counter % 50 == 0)) {
+    //   *leds ^= LED5_SET;
+    // }
+
+    if (errCode_Master) { // MASTER
+      *leds |= LED4_SET;
+    } else {
+      *leds &= ~LED4_SET;
+    }
+
+    if (!timeoutFlgADC) {
+      *leds &= ~LED7_SET;
+    } else if (timeoutFlgADC && (main_loop_counter % 90 == 0)) {
+      *leds ^= LED7_SET;
+    }
+
+    if (!timeoutFlgSerial) {
+      *leds &= ~LED8_SET;
+    } else if (timeoutFlgSerial && (main_loop_counter % 40 == 0)) {
+      *leds ^= LED8_SET;
+    }
+
+    
+  #endif
+  #ifdef BOARD_SLAVE
+    if (enableFinSlave) {
+      *leds |= LED2_SET;
+    } else if (!enableFinSlave && (main_loop_counter % 90 == 0)) {
+      *leds ^= LED2_SET;
+    }
+
+    // Backward Drive: use LED5 (upper Blue)
+    // backwardDrive == 1, blink led
+    // backwardDrive == 0, turn off led
+    // if (backwardDrive && (main_loop_counter % 50 == 0)) {
+    //   *leds ^= LED5_SET;
+    // }
+  if (errCode_Slave) { //
+      *leds |= LED5_SET;
+    } else {
+      *leds &= ~LED5_SET;
+    }
+    if (!timeoutFlgADC) {
+      *leds &= ~LED6_SET;
+    } else if (timeoutFlgADC && (main_loop_counter % 80 == 0)) {
+      *leds ^= LED6_SET;
+    }
+
+    if (!timeoutFlgSerial) {
+      *leds &= ~LED9_SET;
+    } else if (timeoutFlgSerial && (main_loop_counter % 80 == 0)) {
+      *leds ^= LED9_SET;
+    }
+  #endif
 }
 
 void handle_leds(void) {
-    //
-    #ifdef BOARD_MASTER
-      cmdLed = board_leds;
-    #endif
-
-    if (cmdLed & LED1_SET)    { HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET); }
-    if (cmdLed & LED2_SET)    { HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, GPIO_PIN_RESET); }
+    if (cmdLed & LED1_SET)    { HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_SET);       } else { HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, GPIO_PIN_RESET);        }
+    if (cmdLed & LED2_SET)    { HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, GPIO_PIN_SET);   } else { HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, GPIO_PIN_RESET);    }
     
     #ifdef BOARD_SLAVE
-      if (cmdLed & LED3_SET)  { HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, GPIO_PIN_RESET); }
-      if (cmdLed & LED4_SET)  { HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET); }
+      if (cmdLed & LED3_SET)  { HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_ORANGE_PORT, LED_ORANGE_PIN, GPIO_PIN_RESET);  }     
+      if (cmdLed & LED4_SET)  { HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);               } else { HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);                }
     #endif
     
     #ifdef BOARD_MASTER
-      if (cmdLed & LED5_SET)  { HAL_GPIO_WritePin(LED_PORT_1, LED_PIN_1, GPIO_PIN_SET); } else { HAL_GPIO_WritePin(LED_PORT_1, LED_PIN_1, GPIO_PIN_RESET); }
+      if (cmdLed & LED5_SET)  { HAL_GPIO_WritePin(LED_PORT_1, LED_PIN_1, GPIO_PIN_SET);           } else { HAL_GPIO_WritePin(LED_PORT_1, LED_PIN_1, GPIO_PIN_RESET);            }
     #endif
-      
-    //
+
+    #if defined(WS2812B_ENA)
+      #if defined(WS2812B_TEST)
+        UpdateHueEffect();  // Aktualizuj efekt Hue
+      #else
+      if (cmdLed & LED9_SET) {Set_LED(8, 100, 40, 0);    } else {Set_LED(8, 0, 0, 0);}                    // timeoutFlgSerial Slave     [YELLOW]
+      if (cmdLed & LED8_SET) {Set_LED(7, 100, 40, 0);    } else {Set_LED(7, 0, 0, 0);}                    // timeoutFlgSerial Master    [YELLOW]
+      if (cmdLed & LED7_SET) {Set_LED(6, 100, 40, 0);    } else {Set_LED(6, 0, 0, 0);}                    // TimeoutFlgADC Master       [YELLOW]
+      if (cmdLed & LED6_SET) {Set_LED(5, 100, 40, 0);    } else {Set_LED(5, 0, 0, 0);}                    // TimeoutFlgADC Slave        [YELLOW]
+      if (cmdLed & LED5_SET) {Set_LED(4, 100, 0, 0);      } else {Set_LED(4, 0, 0, 0);}                   // Critical error Slave       [RED]
+      if (cmdLed & LED4_SET) {Set_LED(3, 100, 0, 0);      } else {Set_LED(3, 0, 0, 0);}                   // Critical error Master      [RED]
+      if (cmdLed & LED3_SET) {Set_LED(2, 0, 0, 100);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
+      if (cmdLed & LED2_SET) {Set_LED(1, 0, 0, 100);      } else {Set_LED(1, 0, 0, 0);}                   // Enable Slave               [BLUE]
+      if (cmdLed & LED1_SET) {Set_LED(0, 0, 255, 0);      } else {Set_LED(0, 255, 0, 0); Set_LED_OFF();}  // Włącznik                   [GREEN]
+      WS2812_Send();
+      #endif
+    #endif
 }
+#if defined(WS2812B_ENA)
+
+void Set_LED_OFF() { // gasi wszystkie oprpcz włącznika
+
+  for (uint8_t i = 1; i < MAX_LED; i++) {
+        Set_LED(i, 0, 0, 0);
+        }
+}
+
+void Set_LED (int LEDnum, int Red, int Green, int Blue)
+{
+	LED_Data[LEDnum][0] = LEDnum;
+	LED_Data[LEDnum][1] = Green;
+	LED_Data[LEDnum][2] = Red;
+	LED_Data[LEDnum][3] = Blue;
+}
+
+void WS2812_Send (void) {
+	
+  if (!dma_ready) return; // Unikamy nakładania się transferów
+  dma_ready = 0; // Blokujemy kolejne wywołania do momentu zakończenia DMA
+
+  uint32_t indx=0;
+	uint32_t color;
+  
+	for (int i= 0; i<MAX_LED; i++)	{
+		color = ((LED_Data[i][1]<<16) | (LED_Data[i][2]<<8) | (LED_Data[i][3]));
+		for (int i=23; i>=0; i--)	{
+			if (color&(1<<i))	{
+				pwmData[indx] = 55;  // 2/3 of 80
+			}	else {
+        pwmData[indx] = 25;  // 1/3 of 80
+      }
+			indx++;
+		}
+	}
+
+	for (int i=0; i<50; i++)
+	{
+		pwmData[indx] = 0;
+		indx++;
+	}
+  
+	HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM4) { // Sprawdzamy, czy to nasz timer
+    HAL_TIM_PWM_Stop_DMA(&htim4, TIM_CHANNEL_2);
+    dma_ready = 1; // Sygnalizujemy, że można wysłać nowe dane
+  }
+}
+uint32_t speedtest;
+void UpdateHueEffect() {
+  static float currentHue = 0.0f;     // Bieżący odcień (Hue)
+        // Zwiększanie Hue
+        currentHue += HUE_STEP;
+        if (currentHue >= 360.0f) {
+            currentHue -= 360.0f;  // Powrót do początku zakresu
+        }
+
+        // Konwersja HSV -> RGB
+        uint8_t red, green, blue;
+        HSVtoRGB(currentHue, SATURATION, BRIGHTNESS, &red, &green, &blue);
+
+        // Ustawienie koloru na pierwszej diodzie
+        for (uint8_t i = 0; i < MAX_LED; i++) {
+        Set_LED(i, red, green, blue);
+        }
+        WS2812_Send();
+
+}
+
+// Funkcja HSV -> RGB
+void HSVtoRGB(float hue, float saturation, float value, uint8_t* red, uint8_t* green, uint8_t* blue) {
+    float c = value * saturation;
+    float x = c * (1 - fabsf(fmodf(hue / 60.0f, 2) - 1));
+    float m = value - c;
+
+    float r = 0, g = 0, b = 0;
+
+    if (hue < 60) {
+        r = c; g = x; b = 0;
+    } else if (hue < 120) {
+        r = x; g = c; b = 0;
+    } else if (hue < 180) {
+        r = 0; g = c; b = x;
+    } else if (hue < 240) {
+        r = 0; g = x; b = c;
+    } else if (hue < 300) {
+        r = x; g = 0; b = c;
+    } else {
+        r = c; g = 0; b = x;
+    }
+
+    *red   = (uint8_t)((r + m) * 255);
+    *green = (uint8_t)((g + m) * 255);
+    *blue  = (uint8_t)((b + m) * 255);
+}
+
+#endif
+
 
 /*
  * Sideboard Sensor Handling
@@ -1809,9 +1988,10 @@ void saveConfig() {
 
 
 void poweroff(void) {
-  enable = 0;
-  enableMotors = 0;
-  usart2_tx_Send();
+
+    cmdLed &= ~LED1_SET;        // LED1 OFF
+    enable = 0;                 
+    enableMotors = 0;
 
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
   printf("-- Motors disabled --\r\n");
@@ -1820,9 +2000,12 @@ void poweroff(void) {
   buzzerPattern = 0;
   for (int i = 0; i < 8; i++) {
     buzzerFreq = (uint8_t)i;
+    usart2_tx_Send();           // Start DMA TX USART2
     HAL_Delay(100);
   }
+  beepCount(0, 0, 0); // buzzer off
   saveConfig();
+  // HAL_Delay(500);    // 
   HAL_GPIO_WritePin(OFF_PORT, OFF_PIN, GPIO_PIN_RESET);         // Off Power 
   power = 1;
   while(1) {}
