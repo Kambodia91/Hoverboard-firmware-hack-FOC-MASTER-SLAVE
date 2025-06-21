@@ -152,7 +152,8 @@ void handle_leds(void);
 #if defined(WS2812B_ENA)
 void Set_LED_OFF();
 void Set_LED (int LEDnum, int Red, int Green, int Blue);
-void WS2812_Send (void);
+//void WS2812_Send (void);
+void WS2812_UpdateIfChanged(void);
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim);
 void HSVtoRGB(float hue, float saturation, float value, uint8_t* red, uint8_t* green, uint8_t* blue);
 void UpdateHueEffect();

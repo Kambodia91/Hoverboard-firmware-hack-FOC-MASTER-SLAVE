@@ -32,7 +32,7 @@
 #include "comms.h"
 
 #include <math.h> // hue
-
+#include <stdbool.h>
 
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 #include "hd44780.h"
@@ -129,9 +129,12 @@ int16_t controlMode;
 uint8_t ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
 
-
 uint16_t pwmData[(24*MAX_LED)+50];
-uint8_t LED_Data[MAX_LED][4];
+
+uint8_t LED_Data[MAX_LED][4];       // 0: index, 1: G, 2: R, 3: B
+uint8_t LED_Data_prev[MAX_LED][4];  // kopia do porównania
+
+// uint8_t LED_Data[MAX_LED][4];
 uint8_t LED_Mod[MAX_LED][4];  // for brightness
 uint16_t mask = LED1_SET | LED3_SET | LED4_SET | LED7_SET | LED8_SET;
 volatile uint8_t dma_ready = 1;
@@ -1738,7 +1741,7 @@ void handle_leds(void) {
       if (cmdLed & LED3_SET) {Set_LED(2, 0, 0, 100);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
       if (cmdLed & LED2_SET) {Set_LED(1, 0, 0, 100);      } else {Set_LED(1, 0, 0, 0);}                   // Enable Slave               [BLUE]
       if (cmdLed & LED1_SET) {Set_LED(0, 0, 255, 0);      } else {Set_LED(0, 255, 0, 0); Set_LED_OFF();}  // Włącznik                   [GREEN]
-      WS2812_Send();
+      WS2812_UpdateIfChanged();
       #endif
     #endif
 }
@@ -1759,6 +1762,45 @@ void Set_LED (int LEDnum, int Red, int Green, int Blue)
 	LED_Data[LEDnum][3] = Blue;
 }
 
+void WS2812_UpdateIfChanged(void) {
+  if (!dma_ready) return;
+
+  // Porównanie danych z poprzednim stanem
+  bool changed = false;
+  for (int i = 0; i < MAX_LED; i++) {
+    for (int j = 1; j <= 3; j++) {
+      if (LED_Data[i][j] != LED_Data_prev[i][j]) {
+        changed = true;
+        break;
+      }
+    }
+    if (changed) break;
+  }
+
+  if (!changed) return; // nic się nie zmieniło – wyjdź
+
+  // Skopiuj aktualne dane do bufora referencyjnego
+  memcpy(LED_Data_prev, LED_Data, sizeof(LED_Data));
+
+  // Budowanie bufora PWM
+  uint32_t indx = 0;
+  for (int i = 0; i < MAX_LED; i++) {
+    uint32_t color = (LED_Data[i][1] << 16) | (LED_Data[i][2] << 8) | LED_Data[i][3];
+    for (int bit = 23; bit >= 0; bit--) {
+      pwmData[indx++] = (color & (1 << bit)) ? 55 : 25;
+    }
+  }
+
+  // Reset – niskie stany przez kilka slotów
+  for (int i = 0; i < 50; i++) {
+    pwmData[indx++] = 0;
+  }
+
+  dma_ready = 0;
+  HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
+}
+
+/*
 void WS2812_Send (void) {
 	
   if (!dma_ready) return; // Unikamy nakładania się transferów
@@ -1786,7 +1828,7 @@ void WS2812_Send (void) {
 	}
   
 	HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
-}
+}*/
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM4) { // Sprawdzamy, czy to nasz timer
@@ -1811,7 +1853,7 @@ void UpdateHueEffect() {
         for (uint8_t i = 0; i < MAX_LED; i++) {
         Set_LED(i, red, green, blue);
         }
-        WS2812_Send();
+        WS2812_UpdateIfChanged();
 
 }
 
