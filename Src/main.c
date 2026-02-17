@@ -115,7 +115,8 @@ extern int16_t board_temp_deg_c_Slave;          // global variable for calibrate
 extern int16_t errCode_Master;
 extern int16_t errCode_Slave;
 extern uint16_t cmdLed;
-
+extern uint16_t cmdLed_Master;
+uint16_t mask = LED1_SET | LED3_SET | LED4_SET | LED7_SET | LED8_SET;
 
 int16_t motor_dc_curr;                          // global variable for Right DC Link current
 int16_t dc_curr;                                // global variable for Total DC Link current 
@@ -474,6 +475,12 @@ int main(void) {
     #endif
 
     // ####### LEDS HANDLING #######
+    #ifdef BOARD_SLAVE
+    cmdLed = cmdLed_Master & mask;
+    #endif
+    #ifdef BOARD_MASTER
+    //cmdLed = 1;
+    #endif
     Leds(&cmdLed);
     handle_leds();  // Show Leds
 
@@ -523,11 +530,11 @@ int main(void) {
       if (main_loop_counter % 2 == 0) {    // Send data periodically every 10 ms
          #if defined(FEEDBACK_SERIAL_USART1)
         // //USART1 MASTER => ARDUINO//
-        usart1_tx_Send();
+        //usart1_tx_Send();
          #endif
         #if defined(FEEDBACK_SERIAL_USART2)
         //USART2 MASTER => SLAVE//
-        usart2_tx_Send();
+        //usart2_tx_Send();
         #endif
       }
     #endif

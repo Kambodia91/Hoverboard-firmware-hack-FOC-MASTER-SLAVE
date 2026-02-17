@@ -79,7 +79,8 @@ void NMI_Handler(void) {
 */
 void HardFault_Handler(void) {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  __disable_irq();
+  MOTOR_TIM->BDTR &= ~TIM_BDTR_MOE;
   /* USER CODE END HardFault_IRQn 0 */
   while(1) {
   }
@@ -358,14 +359,20 @@ void DMA1_Channel5_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-
+if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE)) {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+        usart2_rx_check();
+    }
+    HAL_UART_IRQHandler(&huart2);
   /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-  if(RESET != __HAL_UART_GET_IT_SOURCE(&huart2, UART_IT_IDLE)) {  // Check for IDLE line interrupt
-      __HAL_UART_CLEAR_IDLEFLAG(&huart2);                         // Clear IDLE line flag (otherwise it will continue to enter interrupt)
-      usart2_rx_check();                                          // Check for data to process
-  }
+////////////////////////////////////////////////////////////////////////////// TESTY
+  // HAL_UART_IRQHandler(&huart2);
+  // /* USER CODE BEGIN USART2_IRQn 1 */
+  // if(RESET != __HAL_UART_GET_IT_SOURCE(&huart2, UART_IT_IDLE)) {  // Check for IDLE line interrupt
+  //     __HAL_UART_CLEAR_IDLEFLAG(&huart2);                         // Clear IDLE line flag (otherwise it will continue to enter interrupt)
+  //     usart2_rx_check();                                          // Check for data to process
+  // }
+////////////////////////////////////////////////////////////////////////////// TESTY
   /* USER CODE END USART2_IRQn 1 */
 }
 #endif
@@ -377,14 +384,14 @@ void USART2_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-  if(RESET != __HAL_UART_GET_IT_SOURCE(&huart1, UART_IT_IDLE)) {  // Check for IDLE line interrupt  
+if(RESET != __HAL_UART_GET_IT_SOURCE(&huart1, UART_IT_IDLE)) {  // Check for IDLE line interrupt  
       __HAL_UART_CLEAR_IDLEFLAG(&huart1);                         // Clear IDLE line flag (otherwise it will continue to enter interrupt)
       usart1_rx_check();                                          // Check for data to process
   }
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+  
   /* USER CODE END USART2_IRQn 1 */
 }
 #endif

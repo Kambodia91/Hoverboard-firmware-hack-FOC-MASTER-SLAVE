@@ -129,15 +129,20 @@ int16_t controlMode;
 uint8_t ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
 
+//------------------------------------------------------------------------
+// WS2812B
+//------------------------------------------------------------------------
 uint16_t pwmData[(24*MAX_LED)+50];
 
 uint8_t LED_Data[MAX_LED][4];       // 0: index, 1: G, 2: R, 3: B
 uint8_t LED_Data_prev[MAX_LED][4];  // kopia do porównania
 
-// uint8_t LED_Data[MAX_LED][4];
 uint8_t LED_Mod[MAX_LED][4];  // for brightness
-uint16_t mask = LED1_SET | LED3_SET | LED4_SET | LED7_SET | LED8_SET;
+
 volatile uint8_t dma_ready = 1;
+
+uint16_t cmdLed = {1};
+uint16_t cmdLed_Master = {1};
 
 //uint8_t datasentflag;
 uint32_t currentTime;
@@ -227,7 +232,7 @@ static SerialSend_Usart2 Send_Usart2;
 #endif
 //#if defined(FEEDBACK_SERIAL_USART1)
 //extern uint8_t board_leds;
-uint16_t cmdLed = {0};
+
 //#endif
 
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
@@ -942,9 +947,8 @@ void readInputRaw(void) {
         board_temp_deg_c_Master   = commandL.boardTemp;               // BOARD SLAVE    <= Message boardTemp          <= BOARD MASTER.
         errCode_Master            = commandL.errCode;                 // BOARD SLAVE    <= Message errCode            <= BOARD MASTER.
         chargeStatus              = commandL.chargeStatus;            // BOARD SLAVE    <= Message chargeStatus       <= BOARD MASTER.
-        //cmdLed                    = commandL.cmdLed;
-        cmdLed = (cmdLed & ~mask) | (commandL.cmdLed & mask);
-
+        cmdLed_Master             = commandL.cmdLed;
+        //cmdLed = (cmdLed & ~mask) | (commandL.cmdLed & mask);
         #endif
         // Message Slave => Master
         #ifdef BOARD_MASTER                                           // RX UART2
@@ -1266,6 +1270,11 @@ void usart2_rx_check(void)
       }
       usart2_process_command(&commandL_raw, &commandL, 2);               // Process data
     }
+///////////////////////////////////////////// TESTY
+  #ifdef BOARD_SLAVE
+    usart2_tx_Send();
+  #endif
+///////////////////////////////////////////// TESTY
   }
   #endif // CONTROL_SERIAL_USART2
 
@@ -1339,6 +1348,10 @@ void usart1_rx_check(void)
       }
       usart1_process_command(&commandR_raw, &commandR, 1);               // Process data
     }
+///////////////////////////////////////////// TESTY
+    usart2_tx_Send();
+    usart1_tx_Send();
+///////////////////////////////////////////// TESTY
   }
   #endif // CONTROL_SERIAL_USART1
 
@@ -1671,13 +1684,13 @@ void Leds(uint16_t *leds) {
 
     if (!timeoutFlgADC) {
       *leds &= ~LED7_SET;
-    } else if (timeoutFlgADC && (main_loop_counter % 90 == 0)) {
+    } else if (timeoutFlgADC && (main_loop_counter % 80 == 0)) {
       *leds ^= LED7_SET;
     }
 
     if (!timeoutFlgSerial) {
       *leds &= ~LED8_SET;
-    } else if (timeoutFlgSerial && (main_loop_counter % 40 == 0)) {
+    } else if (timeoutFlgSerial && (main_loop_counter % 80 == 0)) {
       *leds ^= LED8_SET;
     }
 
@@ -1686,7 +1699,7 @@ void Leds(uint16_t *leds) {
   #ifdef BOARD_SLAVE
     if (enableFinSlave) {
       *leds |= LED2_SET;
-    } else if (!enableFinSlave && (main_loop_counter % 90 == 0)) {
+    } else if (!enableFinSlave && (main_loop_counter % 300 == 0)) {
       *leds ^= LED2_SET;
     }
 
@@ -1766,21 +1779,21 @@ void WS2812_UpdateIfChanged(void) {
   if (!dma_ready) return;
 
   // Porównanie danych z poprzednim stanem
-  bool changed = false;
-  for (int i = 0; i < MAX_LED; i++) {
-    for (int j = 1; j <= 3; j++) {
-      if (LED_Data[i][j] != LED_Data_prev[i][j]) {
-        changed = true;
-        break;
-      }
-    }
-    if (changed) break;
-  }
+ // bool changed = false;
+  // for (int i = 0; i < MAX_LED; i++) {
+  //   for (int j = 1; j <= 3; j++) {
+  //     if (LED_Data[i][j] != LED_Data_prev[i][j]) {
+  //       changed = true;
+  //       break;
+  //     }
+  //   }
+  //   if (changed) break;
+  // }
 
-  if (!changed) return; // nic się nie zmieniło – wyjdź
+  // if (!changed) return; // nic się nie zmieniło – wyjdź
 
-  // Skopiuj aktualne dane do bufora referencyjnego
-  memcpy(LED_Data_prev, LED_Data, sizeof(LED_Data));
+  // // Skopiuj aktualne dane do bufora referencyjnego
+  // memcpy(LED_Data_prev, LED_Data, sizeof(LED_Data));
 
   // Budowanie bufora PWM
   uint32_t indx = 0;
@@ -1800,35 +1813,6 @@ void WS2812_UpdateIfChanged(void) {
   HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
 }
 
-/*
-void WS2812_Send (void) {
-	
-  if (!dma_ready) return; // Unikamy nakładania się transferów
-  dma_ready = 0; // Blokujemy kolejne wywołania do momentu zakończenia DMA
-
-  uint32_t indx=0;
-	uint32_t color;
-  
-	for (int i= 0; i<MAX_LED; i++)	{
-		color = ((LED_Data[i][1]<<16) | (LED_Data[i][2]<<8) | (LED_Data[i][3]));
-		for (int i=23; i>=0; i--)	{
-			if (color&(1<<i))	{
-				pwmData[indx] = 55;  // 2/3 of 80
-			}	else {
-        pwmData[indx] = 25;  // 1/3 of 80
-      }
-			indx++;
-		}
-	}
-
-	for (int i=0; i<50; i++)
-	{
-		pwmData[indx] = 0;
-		indx++;
-	}
-  
-	HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
-}*/
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM4) { // Sprawdzamy, czy to nasz timer
@@ -1836,6 +1820,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
     dma_ready = 1; // Sygnalizujemy, że można wysłać nowe dane
   }
 }
+
 uint32_t speedtest;
 void UpdateHueEffect() {
   static float currentHue = 0.0f;     // Bieżący odcień (Hue)
@@ -1854,7 +1839,6 @@ void UpdateHueEffect() {
         Set_LED(i, red, green, blue);
         }
         WS2812_UpdateIfChanged();
-
 }
 
 // Funkcja HSV -> RGB
@@ -1883,9 +1867,7 @@ void HSVtoRGB(float hue, float saturation, float value, uint8_t* red, uint8_t* g
     *green = (uint8_t)((g + m) * 255);
     *blue  = (uint8_t)((b + m) * 255);
 }
-
 #endif
-
 
 /*
  * Sideboard Sensor Handling
