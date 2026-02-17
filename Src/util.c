@@ -136,7 +136,8 @@ uint16_t pwmData[(24*MAX_LED)+50];
 
 uint8_t LED_Data[MAX_LED][4];       // 0: index, 1: G, 2: R, 3: B
 uint8_t LED_Data_prev[MAX_LED][4];  // kopia do porównania
-
+volatile  uint8_t blynkledEnable = 0;
+volatile  uint8_t blynkledTimeout = 0;
 uint8_t LED_Mod[MAX_LED][4];  // for brightness
 
 volatile uint8_t dma_ready = 1;
@@ -1663,10 +1664,10 @@ void Leds(uint16_t *leds) {
     // Enable flag: use LED4 (bottom Blue)
     // enable == 1, turn on led
     // enable == 0, blink led
-    if (enableFinMaster) {
+    if (!enableFinMaster) {
       *leds |= LED3_SET;
-    } else if (!enableFinMaster && (main_loop_counter % 90 == 0)) {
-      *leds ^= LED3_SET;
+    } else {
+      *leds &= ~LED3_SET;
     }
 
     // Backward Drive: use LED5 (upper Blue)
@@ -1684,23 +1685,23 @@ void Leds(uint16_t *leds) {
 
     if (!timeoutFlgADC) {
       *leds &= ~LED7_SET;
-    } else if (timeoutFlgADC && (main_loop_counter % 80 == 0)) {
-      *leds ^= LED7_SET;
+    } else {
+      *leds |= LED7_SET;
     }
 
     if (!timeoutFlgSerial) {
       *leds &= ~LED8_SET;
-    } else if (timeoutFlgSerial && (main_loop_counter % 80 == 0)) {
-      *leds ^= LED8_SET;
+    } else {
+      *leds |= LED8_SET;
     }
 
     
   #endif
   #ifdef BOARD_SLAVE
-    if (enableFinSlave) {
+    if (!enableFinSlave) {
       *leds |= LED2_SET;
-    } else if (!enableFinSlave && (main_loop_counter % 300 == 0)) {
-      *leds ^= LED2_SET;
+    } else {
+      *leds &= ~LED2_SET;
     }
 
     // Backward Drive: use LED5 (upper Blue)
@@ -1716,14 +1717,14 @@ void Leds(uint16_t *leds) {
     }
     if (!timeoutFlgADC) {
       *leds &= ~LED6_SET;
-    } else if (timeoutFlgADC && (main_loop_counter % 80 == 0)) {
-      *leds ^= LED6_SET;
+    } else {
+      *leds |= LED6_SET;
     }
 
     if (!timeoutFlgSerial) {
       *leds &= ~LED9_SET;
-    } else if (timeoutFlgSerial && (main_loop_counter % 80 == 0)) {
-      *leds ^= LED9_SET;
+    } else {
+      *leds |= LED9_SET;
     }
   #endif
 }
@@ -1745,15 +1746,17 @@ void handle_leds(void) {
       #if defined(WS2812B_TEST)
         UpdateHueEffect();  // Aktualizuj efekt Hue
       #else
-      if (cmdLed & LED9_SET) {Set_LED(8, 100, 40, 0);    } else {Set_LED(8, 0, 0, 0);}                    // timeoutFlgSerial Slave     [YELLOW]
-      if (cmdLed & LED8_SET) {Set_LED(7, 100, 40, 0);    } else {Set_LED(7, 0, 0, 0);}                    // timeoutFlgSerial Master    [YELLOW]
-      if (cmdLed & LED7_SET) {Set_LED(6, 100, 40, 0);    } else {Set_LED(6, 0, 0, 0);}                    // TimeoutFlgADC Master       [YELLOW]
-      if (cmdLed & LED6_SET) {Set_LED(5, 100, 40, 0);    } else {Set_LED(5, 0, 0, 0);}                    // TimeoutFlgADC Slave        [YELLOW]
-      if (cmdLed & LED5_SET) {Set_LED(4, 100, 0, 0);      } else {Set_LED(4, 0, 0, 0);}                   // Critical error Slave       [RED]
-      if (cmdLed & LED4_SET) {Set_LED(3, 100, 0, 0);      } else {Set_LED(3, 0, 0, 0);}                   // Critical error Master      [RED]
-      if (cmdLed & LED3_SET) {Set_LED(2, 0, 0, 100);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
-      if (cmdLed & LED2_SET) {Set_LED(1, 0, 0, 100);      } else {Set_LED(1, 0, 0, 0);}                   // Enable Slave               [BLUE]
-      if (cmdLed & LED1_SET) {Set_LED(0, 0, 255, 0);      } else {Set_LED(0, 255, 0, 0); Set_LED_OFF();}  // Włącznik                   [GREEN]
+      if (main_loop_counter % 90 == 0) {blynkledEnable ^= 1;}
+      if (main_loop_counter % 30 == 0) {blynkledTimeout ^= 1;}
+      if (cmdLed & LED9_SET && blynkledTimeout) {Set_LED(8, 255, 100, 0);    } else {Set_LED(8, 0, 0, 0);}                    // timeoutFlgSerial Slave     [YELLOW]
+      if (cmdLed & LED8_SET && blynkledTimeout) {Set_LED(7, 255, 100, 0);    } else {Set_LED(7, 0, 0, 0);}                    // timeoutFlgSerial Master    [YELLOW]
+      if (cmdLed & LED7_SET && blynkledTimeout) {Set_LED(6, 255, 100, 0);    } else {Set_LED(6, 0, 0, 0);}                    // TimeoutFlgADC Master       [YELLOW]
+      if (cmdLed & LED6_SET && blynkledTimeout) {Set_LED(5, 255, 100, 0);    } else {Set_LED(5, 0, 0, 0);}                    // TimeoutFlgADC Slave        [YELLOW]
+      if (cmdLed & LED5_SET)                    {Set_LED(4, 255, 0, 0);      } else {Set_LED(4, 0, 0, 0);}                   // Critical error Slave       [RED]
+      if (cmdLed & LED4_SET)                    {Set_LED(3, 255, 0, 0);      } else {Set_LED(3, 0, 0, 0);}                   // Critical error Master      [RED]
+      if (cmdLed & LED3_SET && blynkledEnable)  {Set_LED(2, 0, 0, 255);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
+      if (cmdLed & LED2_SET && blynkledEnable)  {Set_LED(1, 0, 0, 255);      } else {Set_LED(1, 0, 0, 0);}                   // Enable Slave               [BLUE]
+      if (cmdLed & LED1_SET)                    {Set_LED(0, 0, 255, 0);      } else {Set_LED(0, 255, 0, 0); Set_LED_OFF();}  // Włącznik                   [GREEN]
       WS2812_UpdateIfChanged();
       #endif
     #endif

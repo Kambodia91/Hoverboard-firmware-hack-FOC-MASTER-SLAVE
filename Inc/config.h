@@ -77,9 +77,9 @@
 #define MAX_LED                 9         // 9 leds // 1 Led = 56 Byte size of memory.
 // #define WS2812B_TEST
 // Constants for effect configuration
-#define HUE_STEP                0.3f      // Hue changes update (0.0 - 360.0)
+#define HUE_STEP                1.0f      // Hue changes update (0.0 - 360.0)
 #define SATURATION              1.0f      // Constant saturation (0.0 - 1.0)
-#define BRIGHTNESS              1.0f      // Constant brightness (0.0 - 1.0)
+#define BRIGHTNESS              0.5f      // Constant brightness (0.0 - 1.0)
 
 // ######################## END OF LED WS2812B ###############################
 

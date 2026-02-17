@@ -309,7 +309,7 @@ void DMA1_Channel6_IRQHandler(void)
 }
 
 /**
-* @brief This function handles DMA1 channel5 global interrupt.
+* @brief This function handles DMA1 channel7 global interrupt.
 */
 void DMA1_Channel7_IRQHandler(void)
 {

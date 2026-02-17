@@ -71,10 +71,10 @@ DMA_HandleTypeDef hdma_tim4_ch2;
   __HAL_RCC_DMA1_CLK_ENABLE();
   
   /* DMA1_Channel6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 1, 1);
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
   /* DMA1_Channel7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 1, 1);
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
   
   huart2.Instance = USART2;
@@ -101,10 +101,10 @@ void UART1_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Channel4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 1);
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
   /* DMA1_Channel5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 1);
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
   
   huart1.Instance = USART1;
@@ -175,7 +175,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_LINKDMA(uartHandle,hdmatx,hdma_usart1_tx);
 
     /* USART1 interrupt Init */
-    HAL_NVIC_SetPriority(USART1_IRQn, 1, 1);
+    HAL_NVIC_SetPriority(USART1_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspInit 1 */
 	__HAL_UART_ENABLE_IT (uartHandle, UART_IT_IDLE);  // Enable the USART IDLE line detection interrupt
@@ -234,7 +234,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_LINKDMA(uartHandle,hdmatx,hdma_usart2_tx);
 
     /* USART2 interrupt Init */
-    HAL_NVIC_SetPriority(USART2_IRQn, 1, 1);
+    HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(USART2_IRQn);
   /* USER CODE BEGIN USART2_MspInit 1 */
 	__HAL_UART_ENABLE_IT (uartHandle, UART_IT_IDLE);  // Enable the USART IDLE line detection interrupt
@@ -324,7 +324,7 @@ void WS2812B_Init(void) {
   *  PB7     ------> Data Ws2812B
   */
 
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef GPIO_InitStruct= {0};
   __HAL_RCC_GPIOB_CLK_ENABLE();
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -345,15 +345,15 @@ void WS2812B_Init(void) {
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 0;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 80-1;
+  htim4.Init.Period = 79;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  HAL_TIM_Base_Init(&htim4);
+  //HAL_TIM_Base_Init(&htim4);
 
   sClockSourceConfig4.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig4);
   HAL_TIM_PWM_Init(&htim4);
-
+  HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig4);
+  
   sMasterConfig4.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig4.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig4);
@@ -361,9 +361,12 @@ void WS2812B_Init(void) {
   sConfigOC4.OCMode = TIM_OCMODE_PWM1;
   sConfigOC4.Pulse = 0;
   sConfigOC4.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC4.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC4.OCFastMode = TIM_OCFAST_ENABLE;
   HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC4, TIM_CHANNEL_2);
+  //__HAL_TIM_DISABLE_OCxPRELOAD(&htim4, TIM_CHANNEL_2);
 
+
+  //HAL_TIM_MspPostInit(&htim4);
   /* Peripheral DMA init*/
   /* TIM4 DMA Init */
   /* TIM4_CH2 Init */
@@ -376,12 +379,12 @@ void WS2812B_Init(void) {
   hdma_tim4_ch2.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
   hdma_tim4_ch2.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
   hdma_tim4_ch2.Init.Mode = DMA_NORMAL;
-  hdma_tim4_ch2.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_tim4_ch2.Init.Priority = DMA_PRIORITY_VERY_HIGH;
   HAL_DMA_Init(&hdma_tim4_ch2);
-
+  
   __HAL_LINKDMA(&htim4,hdma[TIM_DMA_ID_CC2],hdma_tim4_ch2);
 
-  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 
 }
@@ -719,7 +722,7 @@ void MX_ADC1_Init(void) {
   DMA1_Channel1->CCR   = DMA_CCR_MSIZE_1 | DMA_CCR_PSIZE_1 | DMA_CCR_MINC | DMA_CCR_CIRC | DMA_CCR_TCIE;
   DMA1_Channel1->CCR |= DMA_CCR_EN;
 
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 }
 
