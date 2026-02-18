@@ -1262,18 +1262,26 @@ void usart2_rx_check(void)
     ptr = (uint8_t *)&commandL_raw;                                     // Initialize the pointer with command_raw address
     if (pos > old_pos && (pos - old_pos) == commandL_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], commandL_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart2_process_command(&commandL_raw, &commandL, 2);               // Process data
+      usart2_process_command(&commandL_raw, &commandL, 2);              // Process data
     } else if ((rx_buffer_L_len - old_pos + pos) == commandL_len) {     // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in command_raw
         memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
       }
-      usart2_process_command(&commandL_raw, &commandL, 2);               // Process data
+      usart2_process_command(&commandL_raw, &commandL, 2);              // Process data
     }
 ///////////////////////////////////////////// TESTY
+// Communication architecture: Type UART
+
   #ifdef BOARD_SLAVE
-    usart2_tx_Send();
+  // ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
+  //                                          ^        =>        ^              
+    usart2_tx_Send(); // send feedback to Master in case we are on BOARD SLAVE. This is needed to have a more responsive control, since the Master doesn't wait for the Slave response to send the next command, but it just sends them with a fixed delay.
+  #else
+  // ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
+  //                                                             ^        =>        ^ 
+    usart1_tx_Send(); // Received data from Slave on Usart2 connecting data with Master, so we send back the data on ESP32 on Usart1
   #endif
 ///////////////////////////////////////////// TESTY
   }
@@ -1285,14 +1293,14 @@ void usart2_rx_check(void)
     ptr = (uint8_t *)&Sideboard_L_raw;                                  // Initialize the pointer with Sideboard_raw address
     if (pos > old_pos && (pos - old_pos) == Sideboard_L_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], Sideboard_L_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart2_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
+      usart2_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);      // Process data
     } else if ((rx_buffer_L_len - old_pos + pos) == Sideboard_L_len) {  // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in Sideboard_raw
         memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
       }
-      usart2_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
+      usart2_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);      // Process data
     }
   }
   #endif // SIDEBOARD_SERIAL_USART2
@@ -1340,18 +1348,21 @@ void usart1_rx_check(void)
     ptr = (uint8_t *)&commandR_raw;                                     // Initialize the pointer with command_raw address
     if (pos > old_pos && (pos - old_pos) == commandR_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], commandR_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart1_process_command(&commandR_raw, &commandR, 1);               // Process data
+      usart1_process_command(&commandR_raw, &commandR, 1);              // Process data
     } else if ((rx_buffer_R_len - old_pos + pos) == commandR_len) {     // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in command_raw
         memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart1_process_command(&commandR_raw, &commandR, 1);               // Process data
+      usart1_process_command(&commandR_raw, &commandR, 1);              // Process data
     }
 ///////////////////////////////////////////// TESTY
-    usart2_tx_Send();
-    usart1_tx_Send();
+// Communication architecture: Type UART
+// ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
+//                      ^         =>        ^        
+                      // Usart1 recived data to control BOARD MASTER, so we send back the data on USART2 to control BOARD SLAVE,
+    usart2_tx_Send(); // Send data on USART2 in case we are on BOARD SLAVE.
 ///////////////////////////////////////////// TESTY
   }
   #endif // CONTROL_SERIAL_USART1
@@ -1362,14 +1373,14 @@ void usart1_rx_check(void)
     ptr = (uint8_t *)&Sideboard_R_raw;                                  // Initialize the pointer with Sideboard_raw address
     if (pos > old_pos && (pos - old_pos) == Sideboard_R_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], Sideboard_R_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 1);       // Process data
+      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 1);      // Process data
     } else if ((rx_buffer_R_len - old_pos + pos) == Sideboard_R_len) {  // "Overflow" buffer mode: check if data length equals expected length
       memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
       if (pos > 0) {                                                    // Check and continue with beginning of buffer
         ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in Sideboard_raw
         memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
       }
-      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 1);       // Process data
+      usart1_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 1);      // Process data
     }
   }
   #endif // SIDEBOARD_SERIAL_USART1
@@ -1448,29 +1459,29 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
 #if defined(CONTROL_SERIAL_USART2)
 void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx) 
 {
-  // #ifdef CONTROL_IBUS
-  //   uint16_t ibus_chksum;
-  //   if (command_in->start == IBUS_LENGTH && command_in->type == IBUS_COMMAND) {
-  //     ibus_chksum = 0xFFFF - IBUS_LENGTH - IBUS_COMMAND;
-  //     for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i++) {
-  //       ibus_chksum -= command_in->channels[i];
-  //     }
-  //     if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
-  //       *command_out = *command_in;
-  //       if (usart_idx == 2) {             // Sideboard USART2
-  //         #ifdef CONTROL_SERIAL_USART2
-  //         timeoutFlgSerial_L = 0;         // Clear timeout flag
-  //         timeoutCntSerial_L = 0;         // Reset timeout counter
-  //         #endif
-  //       } else if (usart_idx == 1) {      // Sideboard USART1
-  //         #ifdef CONTROL_SERIAL_USART1
-  //         timeoutFlgSerial_R = 0;         // Clear timeout flag
-  //         timeoutCntSerial_R = 0;         // Reset timeout counter
-  //         #endif
-  //       }
-  //     }
-  //   }
-  // #else
+  #ifdef CONTROL_IBUS
+    uint16_t ibus_chksum;
+    if (command_in->start == IBUS_LENGTH && command_in->type == IBUS_COMMAND) {
+      ibus_chksum = 0xFFFF - IBUS_LENGTH - IBUS_COMMAND;
+      for (uint8_t i = 0; i < (IBUS_NUM_CHANNELS * 2); i++) {
+        ibus_chksum -= command_in->channels[i];
+      }
+      if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
+        *command_out = *command_in;
+        if (usart_idx == 2) {             // Sideboard USART2
+          #ifdef CONTROL_SERIAL_USART2
+          timeoutFlgSerial_L = 0;         // Clear timeout flag
+          timeoutCntSerial_L = 0;         // Reset timeout counter
+          #endif
+        } else if (usart_idx == 1) {      // Sideboard USART1
+          #ifdef CONTROL_SERIAL_USART1
+          timeoutFlgSerial_R = 0;         // Clear timeout flag
+          timeoutCntSerial_R = 0;         // Reset timeout counter
+          #endif
+        }
+      }
+    }
+  #else
   uint16_t checksum;
   
   if (command_in->start == SERIAL_START_FRAME) {
@@ -1495,7 +1506,7 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
       }
     }
   }
-  // #endif
+  #endif
 }
 #endif
 
@@ -1710,7 +1721,7 @@ void Leds(uint16_t *leds) {
     // if (backwardDrive && (main_loop_counter % 50 == 0)) {
     //   *leds ^= LED5_SET;
     // }
-  if (errCode_Slave) { //
+  if (errCode_Slave) {    // SLAVE
       *leds |= LED5_SET;
     } else {
       *leds &= ~LED5_SET;
@@ -1748,10 +1759,10 @@ void handle_leds(void) {
       #else
       if (main_loop_counter % 90 == 0) {blynkledEnable ^= 1;}
       if (main_loop_counter % 30 == 0) {blynkledTimeout ^= 1;}
-      if (cmdLed & LED9_SET && blynkledTimeout) {Set_LED(8, 255, 100, 0);    } else {Set_LED(8, 0, 0, 0);}                    // timeoutFlgSerial Slave     [YELLOW]
-      if (cmdLed & LED8_SET && blynkledTimeout) {Set_LED(7, 255, 100, 0);    } else {Set_LED(7, 0, 0, 0);}                    // timeoutFlgSerial Master    [YELLOW]
-      if (cmdLed & LED7_SET && blynkledTimeout) {Set_LED(6, 255, 100, 0);    } else {Set_LED(6, 0, 0, 0);}                    // TimeoutFlgADC Master       [YELLOW]
-      if (cmdLed & LED6_SET && blynkledTimeout) {Set_LED(5, 255, 100, 0);    } else {Set_LED(5, 0, 0, 0);}                    // TimeoutFlgADC Slave        [YELLOW]
+      if (cmdLed & LED9_SET)                    {Set_LED(8, 255, 100, 0);    } else {Set_LED(8, 0, 0, 0);}                    // timeoutFlgSerial Slave     [YELLOW]
+      if (cmdLed & LED8_SET)                    {Set_LED(7, 255, 100, 0);    } else {Set_LED(7, 0, 0, 0);}                    // timeoutFlgSerial Master    [YELLOW]
+      if (cmdLed & LED7_SET)                    {Set_LED(6, 255, 100, 0);    } else {Set_LED(6, 0, 0, 0);}                    // TimeoutFlgADC Master       [YELLOW]
+      if (cmdLed & LED6_SET)                    {Set_LED(5, 255, 100, 0);    } else {Set_LED(5, 0, 0, 0);}                    // TimeoutFlgADC Slave        [YELLOW]
       if (cmdLed & LED5_SET)                    {Set_LED(4, 255, 0, 0);      } else {Set_LED(4, 0, 0, 0);}                   // Critical error Slave       [RED]
       if (cmdLed & LED4_SET)                    {Set_LED(3, 255, 0, 0);      } else {Set_LED(3, 0, 0, 0);}                   // Critical error Master      [RED]
       if (cmdLed & LED3_SET && blynkledEnable)  {Set_LED(2, 0, 0, 255);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
@@ -1764,10 +1775,9 @@ void handle_leds(void) {
 #if defined(WS2812B_ENA)
 
 void Set_LED_OFF() { // gasi wszystkie oprpcz włącznika
-
   for (uint8_t i = 1; i < MAX_LED; i++) {
-        Set_LED(i, 0, 0, 0);
-        }
+    Set_LED(i, 0, 0, 0);
+  }
 }
 
 void Set_LED (int LEDnum, int Red, int Green, int Blue)
