@@ -362,7 +362,7 @@ int main(void) {
       // ####### SET OUTPUTS (if the target change is less than +/- 100) #######
       #endif
       #ifdef BOARD_MASTER
-        pwm = -cmdMaster;
+        pwm = cmdMaster;
       #endif
       #ifdef BOARD_SLAVE
         pwm = cmdSlave;

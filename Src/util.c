@@ -1371,10 +1371,6 @@ void usart1_rx_check(void)
       }
       usart1_process_command(&commandR_raw, &commandR, 1);              // Process data
     }
-<<<<<<< HEAD
-    usart2_tx_Send();
-    usart1_tx_Send();
-=======
 ///////////////////////////////////////////// TESTY
 // Communication architecture: Type UART
 // ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
@@ -1382,7 +1378,6 @@ void usart1_rx_check(void)
                       // Usart1 recived data to control BOARD MASTER, so we send back the data on USART2 to control BOARD SLAVE,
     usart2_tx_Send(); // Send data on USART2 in case we are on BOARD SLAVE.
 ///////////////////////////////////////////// TESTY
->>>>>>> f01ac99357d10c4bd91a4331190578506e8534ef
   }
   #endif // CONTROL_SERIAL_USART1
 
