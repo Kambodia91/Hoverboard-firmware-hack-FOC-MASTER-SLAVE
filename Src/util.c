@@ -119,7 +119,12 @@ int16_t errCode_Slave = 0;
 int16_t speedSlave_meas;                // SpeedL_meas from Slave.
 
 int16_t enableMotors;                   // Command enable motors from uart1
-int16_t controlMode;
+int16_t controlMode = 0;
+int16_t dirLeft = 0;
+int16_t dirRight = 0;
+int16_t baseSpeed = 0;
+int8_t  signMaster = 0;
+int8_t  signSlave  = 0;
 int16_t enableFinMaster;
 int16_t enableFinSlave;
 int countTest;
@@ -222,7 +227,7 @@ typedef struct{
   int16_t   errCode;        // Slawe to Master
   int16_t   enableFin;      // Slave to Master
   int16_t   chargeStatus;   // Master to Slave
-  uint16_t   cmdLed;         // Master to Slave
+  uint16_t  cmdLed;         // Master to Slave
   uint16_t  checksum;       // Master/Slave
 } SerialSend_Usart2;
 static SerialSend_Usart2 Send_Usart2;
@@ -971,10 +976,23 @@ void readInputRaw(void) {
         input2[inIdx].raw = (ibusR_captured_value[1] - 500) * 2; 
         enableMotors = 1;
       #else                                                   // RX UART2
-        enableMotors              = commandR.enableMotors;            // ARDUINO      => Message enableMotors     => BOARD MASTER.
-        controlMode               = commandR.controlMode;             // ARDUINO      => Message controlMode      => BOARD MASTER.
-        input1[inIdx].raw         = commandR.speedMaster;             // ARDUINO      => Message speedMaster      => BOARD MASTER.
-        input2[inIdx].raw         = commandR.speedSlave;              // ARDUINO      => Message speedSlave       => BOARD MASTER.
+        enableMotors              = commandR.enableMotors;           // ARDUINO      => Message enableMotors     => BOARD MASTER.
+        controlMode               = commandR.controlMode;            // ARDUINO      => Message controlMode      => BOARD MASTER.
+        dirLeft                   = commandR.dirLeft;                // ARDUINO      => Message dirLeft          => BOARD MASTER.
+        dirRight                  = commandR.dirRight;               // ARDUINO      => Message dirRight         => BOARD MASTER.
+        
+        if (dirLeft == 1) {
+          baseSpeed  = commandR.speedLeft;
+          signMaster = -1;
+          signSlave  = +1;
+        }
+        else if (dirRight == 1) {
+          baseSpeed  = commandR.speedRight;
+          signMaster = +1;
+          signSlave  = -1;
+        }
+        input1[inIdx].raw = signMaster * baseSpeed;  // speedMaster
+        input2[inIdx].raw = signSlave  * baseSpeed;  // speedSlave
       #endif
     }
     #endif
@@ -1271,11 +1289,9 @@ void usart2_rx_check(void)
       }
       usart2_process_command(&commandL_raw, &commandL, 2);               // Process data
     }
-///////////////////////////////////////////// TESTY
   #ifdef BOARD_SLAVE
     usart2_tx_Send();
   #endif
-///////////////////////////////////////////// TESTY
   }
   #endif // CONTROL_SERIAL_USART2
 
@@ -1349,10 +1365,8 @@ void usart1_rx_check(void)
       }
       usart1_process_command(&commandR_raw, &commandR, 1);               // Process data
     }
-///////////////////////////////////////////// TESTY
     usart2_tx_Send();
     usart1_tx_Send();
-///////////////////////////////////////////// TESTY
   }
   #endif // CONTROL_SERIAL_USART1
 
@@ -1430,8 +1444,10 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
     checksum = (uint16_t)(command_in->start ^ 
                           command_in->enableMotors ^ 
                           command_in->controlMode ^ 
-                          command_in->speedMaster ^ 
-                          command_in->speedSlave);
+                          command_in->dirLeft ^ 
+                          command_in->speedLeft ^ 
+                          command_in->dirRight ^
+                          command_in->speedRight);
     
     if (command_in->checksum == checksum) {
       *command_out = *command_in;

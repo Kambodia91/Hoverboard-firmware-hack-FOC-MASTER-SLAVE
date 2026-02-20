@@ -186,7 +186,7 @@ int main(void) {
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(PendSV_IRQn, 0, 0);
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 2, 0);  // Test For WS2812B
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);  // Test For WS2812B
 
   SystemClock_Config();
 
@@ -365,7 +365,7 @@ int main(void) {
         pwm = cmdMaster;
       #endif
       #ifdef BOARD_SLAVE
-        pwm = -cmdSlave;
+        pwm = cmdSlave;
       #endif
 
     #ifdef VARIANT_TRANSPOTTER
@@ -525,27 +525,11 @@ int main(void) {
       }
     #endif
 
-    // ####### UART SERIAL OUT #######
-    #if defined(FEEDBACK_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART1)
-      if (main_loop_counter % 2 == 0) {    // Send data periodically every 10 ms
-         #if defined(FEEDBACK_SERIAL_USART1)
-        // //USART1 MASTER => ARDUINO//
-        //usart1_tx_Send();
-         #endif
-        #if defined(FEEDBACK_SERIAL_USART2)
-        //USART2 MASTER => SLAVE//
-        //usart2_tx_Send();
-        #endif
-      }
-    #endif
-
     // ####### CHARGE PORT CHECK #######
     #ifdef BOARD_MASTER
     chargeCheck();
     
-    
     // ####### POWEROFF BY POWER-BUTTON #######
-    
     poweroffPressCheck();
     #endif
     
