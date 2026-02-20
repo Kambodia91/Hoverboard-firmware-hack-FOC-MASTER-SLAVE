@@ -362,7 +362,7 @@ int main(void) {
       // ####### SET OUTPUTS (if the target change is less than +/- 100) #######
       #endif
       #ifdef BOARD_MASTER
-        pwm = cmdMaster;
+        pwm = -cmdMaster;
       #endif
       #ifdef BOARD_SLAVE
         pwm = cmdSlave;
@@ -588,6 +588,10 @@ int main(void) {
       // poweroff();
     }
 
+static uint32_t lastcycle = 0;
+uint32_t nowcycle = HAL_GetTick();
+uint32_t dtcycle = nowcycle - lastcycle;
+lastcycle = nowcycle;
 
     // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);                 // This is to measure the main() loop duration with an oscilloscope connected to LED_PIN
     // Update states

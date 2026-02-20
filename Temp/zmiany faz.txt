@@ -1,0 +1,13 @@
+Koła nowe                           koła stare
+
+F1 Zielony     <------------------  Żótłty
+F2 Niebieski   <------------------  Zielony
+F3 Żótłty      <------------------  Niebieski
+
+czujniki hala:
+
+Niebieski      <------------------   Żótłty
+Czarny         <------------------   Czarny
+Zielony        <------------------   Niebieski
+Czerwony       <------------------   Czerwony
+Żótłty         <------------------   Zielony
