@@ -1768,8 +1768,8 @@ void handle_leds(void) {
       if (cmdLed & LED6_SET)                    {Set_LED(5, 255, 100, 0);    } else {Set_LED(5, 0, 0, 0);}                    // TimeoutFlgADC Slave        [YELLOW]
       if (cmdLed & LED5_SET)                    {Set_LED(4, 255, 0, 0);      } else {Set_LED(4, 0, 0, 0);}                   // Critical error Slave       [RED]
       if (cmdLed & LED4_SET)                    {Set_LED(3, 255, 0, 0);      } else {Set_LED(3, 0, 0, 0);}                   // Critical error Master      [RED]
-      if (cmdLed & LED3_SET && blynkledEnable)  {Set_LED(2, 0, 0, 255);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
-      if (cmdLed & LED2_SET && blynkledEnable)  {Set_LED(1, 0, 0, 255);      } else {Set_LED(1, 0, 0, 0);}                   // Enable Slave               [BLUE]
+      if (cmdLed & LED3_SET)                    {Set_LED(2, 0, 0, 255);      } else {Set_LED(2, 0, 0, 0);}                   // Enable Master              [BLUE]
+      if (cmdLed & LED2_SET)                    {Set_LED(1, 0, 0, 255);      } else {Set_LED(1, 0, 0, 0);}                   // Enable Slave               [BLUE]
       if (cmdLed & LED1_SET)                    {Set_LED(0, 0, 255, 0);      } else {Set_LED(0, 255, 0, 0); Set_LED_OFF();}  // Włącznik                   [GREEN]
       WS2812_UpdateIfChanged();
       #endif
@@ -1795,21 +1795,21 @@ void WS2812_UpdateIfChanged(void) {
   if (!dma_ready) return;
 
   // Porównanie danych z poprzednim stanem
- // bool changed = false;
-  // for (int i = 0; i < MAX_LED; i++) {
-  //   for (int j = 1; j <= 3; j++) {
-  //     if (LED_Data[i][j] != LED_Data_prev[i][j]) {
-  //       changed = true;
-  //       break;
-  //     }
-  //   }
-  //   if (changed) break;
-  // }
+ bool changed = false;
+  for (int i = 0; i < MAX_LED; i++) {
+    for (int j = 1; j <= 3; j++) {
+      if (LED_Data[i][j] != LED_Data_prev[i][j]) {
+        changed = true;
+        break;
+      }
+    }
+    if (changed) break;
+  }
 
-  // if (!changed) return; // nic się nie zmieniło – wyjdź
+  if (!changed) return; // nic się nie zmieniło – wyjdź
 
-  // // Skopiuj aktualne dane do bufora referencyjnego
-  // memcpy(LED_Data_prev, LED_Data, sizeof(LED_Data));
+  // Skopiuj aktualne dane do bufora referencyjnego
+  memcpy(LED_Data_prev, LED_Data, sizeof(LED_Data));
 
   // Budowanie bufora PWM
   uint32_t indx = 0;

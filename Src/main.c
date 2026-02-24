@@ -122,7 +122,7 @@ int16_t motor_dc_curr;                          // global variable for Right DC 
 int16_t dc_curr;                                // global variable for Total DC Link current 
 int16_t cmdMaster;                              // global variable for Master Command 
 int16_t cmdSlave;                               // global variable for Slave Command 
-
+uint32_t dtcycle;
 //------------------------------------------------------------------------
 // Local variables
 //------------------------------------------------------------------------
@@ -590,7 +590,7 @@ int main(void) {
 
 static uint32_t lastcycle = 0;
 uint32_t nowcycle = HAL_GetTick();
-uint32_t dtcycle = nowcycle - lastcycle;
+dtcycle = nowcycle - lastcycle;
 lastcycle = nowcycle;
 
     // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);                 // This is to measure the main() loop duration with an oscilloscope connected to LED_PIN
