@@ -58,11 +58,41 @@
 #define ADC_TOTAL_CONV_TIME     (ADC_CLOCK_DIV * ADC_CONV_CLOCK_CYCLES) // = ((SystemCoreClock / ADC_CLOCK_HZ) * ADC_CONV_CLOCK_CYCLES), where ADC_CLOCK_HZ = SystemCoreClock/ADC_CLOCK_DIV
 // ########################### END OF  DO-NOT-TOUCH SETTINGS ############################
 
+////////////////////////////////
+//           ESP32            //    
+// Srial1_TX  |  Serial1_RX   //
+//               Serial2_RX   //
+////////////////////////////////
+//     |             |        //
+//  control       feedback    //
+//  Master1        Master1    //
+//  Master2        Master2    //  
+////////////////////////////////
+
+
+////////////////////////////////
+//             ↑              //
+//             ↑              //
+//        ╔═════════╗         //
+//   L  ╠═╣    ↑    ╠═╣  P    //
+// MASTER ║    ↑    ║  MASTER //
+//        ║    ↑    ║         //
+//        ║    ↑    ║         //
+//   L  ╠═╣    ↑    ╠═╣  P    //
+//  SLAVE ╚═════════╝   SLAVE //
+//             ↑              //
+////////////////////////////////
+
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
 #define BOARD_MASTER                      // board master 
 // #define BOARD_SLAVE                       // board slave
+
+#ifdef BOARD_MASTER
+#define LEFT_SIDE
+// #define RIGHT_SIDE
+#endif
 
 // Enable/Disable Motor
 #define MOTOR_ENA                       // [-] Enable motor. Comment-out if this motor is not needed to be operational

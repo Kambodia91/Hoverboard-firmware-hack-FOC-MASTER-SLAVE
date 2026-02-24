@@ -39,9 +39,7 @@
       uint16_t  start;          // 
       int16_t   enableMotors;   // Arduino  => Master
       int16_t   controlMode;    // Arduino  => Master         => Slave
-      int16_t   dirLeft;        // Arduino  => Master
       int16_t   speedLeft;      // Arduino  => Master
-      int16_t   dirRight;       // Arduino  => Master
       int16_t   speedRight;     // Arduino  => Master         => Slave
       uint16_t  checksum;       // 
     } SerialUart1;

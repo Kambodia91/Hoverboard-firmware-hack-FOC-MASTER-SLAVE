@@ -120,11 +120,6 @@ int16_t speedSlave_meas;                // SpeedL_meas from Slave.
 
 int16_t enableMotors;                   // Command enable motors from uart1
 int16_t controlMode = 0;
-int16_t dirLeft = 0;
-int16_t dirRight = 0;
-int16_t baseSpeed = 0;
-int8_t  signMaster = 0;
-int8_t  signSlave  = 0;
 int16_t enableFinMaster;
 int16_t enableFinSlave;
 int countTest;
@@ -978,21 +973,15 @@ void readInputRaw(void) {
       #else                                                   // RX UART2
         enableMotors              = commandR.enableMotors;           // ARDUINO      => Message enableMotors     => BOARD MASTER.
         controlMode               = commandR.controlMode;            // ARDUINO      => Message controlMode      => BOARD MASTER.
-        dirLeft                   = commandR.dirLeft;                // ARDUINO      => Message dirLeft          => BOARD MASTER.
-        dirRight                  = commandR.dirRight;               // ARDUINO      => Message dirRight         => BOARD MASTER.
-        
-        if (dirLeft == 1) {
-          baseSpeed  = commandR.speedLeft;
-          signMaster = -1;
-          signSlave  = +1;
-        }
-        else if (dirRight == 1) {
-          baseSpeed  = commandR.speedRight;
-          signMaster = +1;
-          signSlave  = -1;
-        }
-        input1[inIdx].raw = signMaster * baseSpeed;  // speedMaster
-        input2[inIdx].raw = signSlave  * baseSpeed;  // speedSlave
+
+        #ifdef LEFT_SIDE
+        input1[inIdx].raw = commandR.speedLeft;  // speedMaster
+        input2[inIdx].raw = commandR.speedLeft;  // speedSlave
+        #endif
+        #ifdef RIGHT_SIDE
+        input1[inIdx].raw = -commandR.speedRight;  // speedSlave
+        input2[inIdx].raw = -commandR.speedRight;  // speedMaster
+        #endif
       #endif
     }
     #endif
@@ -1455,9 +1444,7 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
     checksum = (uint16_t)(command_in->start ^ 
                           command_in->enableMotors ^ 
                           command_in->controlMode ^ 
-                          command_in->dirLeft ^ 
                           command_in->speedLeft ^ 
-                          command_in->dirRight ^
                           command_in->speedRight);
     
     if (command_in->checksum == checksum) {
