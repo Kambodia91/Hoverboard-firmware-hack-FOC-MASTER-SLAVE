@@ -153,21 +153,25 @@ const ConstP rtConstP = {
 P rtP_Motor = {
   /* Variable: dV_openRate
    * Referenced by: '<S37>/dV_openRate'
+    * Maksymalna zmiana zadania napięcia podczas narastania/opadania (skala fixdt).
    */
   12288,
 
   /* Variable: dz_cntTrnsDetHi
    * Referenced by: '<S17>/dz_cntTrnsDet'
+    * Gorny prog wykrywania przejscia stanow czujnikow Halla.
    */
   40,
 
   /* Variable: dz_cntTrnsDetLo
    * Referenced by: '<S17>/dz_cntTrnsDet'
+    * Dolny prog wykrywania przejscia stanow czujnikow Halla.
    */
   20,
 
   /* Variable: n_cruiseMotTgt
    * Referenced by: '<S61>/n_cruiseMotTgt'
+    * Zadana predkosc silnika dla tempomatu (RPM, skala fixdt).
    */
   0,
 
@@ -178,21 +182,25 @@ P rtP_Motor = {
    *   '<S13>/z_maxCntRst2'
    *   '<S13>/UnitDelay3'
    *   '<S17>/z_counter'
+  * Maksymalna wartosc licznika uzywanego do wykrywania postoju i przejsc.
    */
   2000,
 
   /* Variable: cf_speedCoef
    * Referenced by: '<S17>/cf_speedCoef'
+    * Wspolczynnik przeliczenia impulsow Halla na predkosc.
    */
   10667U,
 
   /* Variable: t_errDequal
    * Referenced by: '<S20>/t_errDequal'
+    * Czas, przez ktory blad wejscia musi nie wystepowac, aby zostal skasowany (takty sterowania).
    */
   9600U,
 
   /* Variable: t_errQual
-   * Referenced by: '<S20>/t_errQual'                          1280U -> 9600U 
+    * Referenced by: '<S20>/t_errQual'                          1280U -> 9600U
+    * Czas, przez ktory blad wejscia musi wystepowac, aby zostal uznany (takty sterowania).
    */
   9600U,
 
@@ -200,11 +208,14 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S36>/Vd_max'
    *   '<S80>/Vd_max1'
+  * Maksymalne zadanie napiecia osi d.
    */
   14400,
 
   /* Variable: Vq_max_M1
    * Referenced by: '<S80>/Vq_max_M1'
+    * Ograniczenie napiecia osi q w zaleznosci od predkosci silnika 1.
+    * Wygenerowana tablica; nie zmieniac pojedynczych wartosci bez potrzeby.
    */
   { 14400, 14396, 14386, 14368, 14343, 14311, 14271, 14225, 14171, 14109, 14040,
     13963, 13879, 13786, 13685, 13576, 13459, 13333, 13198, 13053, 12900, 12736,
@@ -213,6 +224,8 @@ P rtP_Motor = {
 
   /* Variable: Vq_max_XA
    * Referenced by: '<S80>/Vq_max_XA'
+    * Ograniczenie napiecia osi q w zaleznosci od obciazenia/zadanego pradu.
+    * Wygenerowana tablica; nie zmieniac pojedynczych wartosci bez potrzeby.
    */
   { 0, 320, 640, 960, 1280, 1600, 1920, 2240, 2560, 2880, 3200, 3520, 3840, 4160,
     4480, 4800, 5120, 5440, 5760, 6080, 6400, 6720, 7040, 7360, 7680, 8000, 8320,
@@ -221,6 +234,7 @@ P rtP_Motor = {
 
   /* Variable: a_phaAdvMax
    * Referenced by: '<S42>/a_phaAdvMax'
+    * Maksymalny kat wyprzedzenia fazy dla sterowania sinusoidalnego (skala fixdt).
    */
   400, 
 
@@ -228,31 +242,37 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S36>/i_max'
    *   '<S80>/i_max'
+  * Maksymalny prad fazowy silnika. Wartosc to prad[A] * 50 * 16.
    */
   12000,
 
   /* Variable: id_fieldWeakMax
    * Referenced by: '<S42>/id_fieldWeakMax'
+    * Maksymalny prad osi d uzywany do oslabiania pola. Wartosc to prad[A] * 50 * 16.
    */
   4000,
 
   /* Variable: n_commAcvLo
    * Referenced by: '<S13>/n_commDeacv'
+    * Predkosc ponizej ktorej wlaczana jest pomoc komutacji (skala fixdt).
    */
   240,
 
   /* Variable: n_commDeacvHi
    * Referenced by: '<S13>/n_commDeacv'
+    * Predkosc powyzej ktorej wylaczana jest pomoc komutacji (skala fixdt).
    */
   480,
 
   /* Variable: n_fieldWeakAuthHi
    * Referenced by: '<S42>/n_fieldWeakAuthHi'
+    * Gorny prog predkosci zezwalajacy na oslabianie pola.
    */
   6400,
 
   /* Variable: n_fieldWeakAuthLo
    * Referenced by: '<S42>/n_fieldWeakAuthLo'
+    * Dolny prog predkosci dla oslabiania pola; tworzy histereze.
    */
   4800,
 
@@ -260,26 +280,31 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S36>/n_max'
    *   '<S80>/n_max1'
+  * Ograniczenie maksymalnej predkosci silnika (RPM, skala fixdt).
    */
   16000,
 
   /* Variable: n_stdStillDet
    * Referenced by: '<S13>/n_stdStillDet'
+    * Prog predkosci ponizej ktorego silnik jest uznawany za zatrzymany.
    */
   48,
 
   /* Variable: r_errInpTgtThres
-   * Referenced by: '<S20>/r_errInpTgtThres'                 9600 -> 16000
+    * Referenced by: '<S20>/r_errInpTgtThres'                 9600 -> 16000
+    * Prog bledu miedzy wejsciem a zadaniem, uzywany do kontroli wiarygodnosci wejscia.
    */
   16000,
 
   /* Variable: r_fieldWeakHi
    * Referenced by: '<S42>/r_fieldWeakHi'
+    * Predkosc, przy ktorej oslabianie pola osiaga gorny prog.
    */
   16000,
 
   /* Variable: r_fieldWeakLo
    * Referenced by: '<S42>/r_fieldWeakLo'
+    * Predkosc, przy ktorej oslabianie pola jest wylaczane podczas hamowania.
    */
   12000,
 
@@ -287,36 +312,43 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S82>/cf_KbLimProt'
    *   '<S83>/cf_KbLimProt'
+  * Wzmocnienie sprzezenia zwrotnego ochrony anti-windup.
    */
   768U,
 
   /* Variable: cf_idKp
    * Referenced by: '<S63>/cf_idKp1'
+    * Wzmocnienie proporcjonalne regulatora pradu osi d.
    */
   819U,
 
   /* Variable: cf_iqKp
    * Referenced by: '<S62>/cf_iqKp'
+    * Wzmocnienie proporcjonalne regulatora pradu/momentu osi q.
    */
   1229U,
 
   /* Variable: cf_nKp
    * Referenced by: '<S61>/cf_nKp'
+    * Wzmocnienie proporcjonalne regulatora predkosci silnika.
    */
   4833U,
 
   /* Variable: cf_currFilt
    * Referenced by: '<S50>/cf_currFilt'
+    * Wspolczynnik filtru dolnoprzepustowego pomiaru pradu.
    */
   7864U,
 
   /* Variable: cf_idKi
    * Referenced by: '<S63>/cf_idKi1'
+    * Wzmocnienie calkujace regulatora pradu osi d.
    */
   737U,
 
   /* Variable: cf_iqKi
    * Referenced by: '<S62>/cf_iqKi'
+    * Wzmocnienie calkujace regulatora pradu/momentu osi q.
    */
   1229U,
 
@@ -324,11 +356,13 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S81>/cf_iqKiLimProt'
    *   '<S83>/cf_iqKiLimProt'
+  * Ograniczenie anti-windup czlonu calkujacego regulatora pradu osi q.
    */
   737U,
 
   /* Variable: cf_nKi
    * Referenced by: '<S61>/cf_nKi'
+    * Wzmocnienie calkujace regulatora predkosci silnika.
    */
   251U,
 
@@ -336,21 +370,25 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S82>/cf_nKiLimProt'
    *   '<S83>/cf_nKiLimProt'
+  * Ograniczenie anti-windup czlonu calkujacego regulatora predkosci.
    */
   246U,
 
   /* Variable: n_polePairs
    * Referenced by: '<S15>/n_polePairs'
+    * Liczba par biegunow silnika; sluzy do przeliczenia predkosci mechanicznej na elektryczna.
    */
   15U,
 
   /* Variable: z_ctrlTypSel
    * Referenced by: '<S1>/z_ctrlTypSel'
+    * Typ sterowania: 0 = komutacja, 1 = sinusoidalne, 2 = FOC.
    */
   2U,
 
   /* Variable: z_selPhaCurMeasABC
    * Referenced by: '<S49>/z_selPhaCurMeasABC'
+    * Wybor mapowania pomiaru pradow fazowych.
    */
   0U,
 
@@ -358,16 +396,19 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S3>/b_angleMeasEna'
    *   '<S13>/b_angleMeasEna'
+  * 0 = estymowany kat wirnika, 1 = zmierzony kat/enkoder.
    */
   0,
 
   /* Variable: b_cruiseCtrlEna
    * Referenced by: '<S1>/b_cruiseCtrlEna'
+    * Wlacza tempomat.
    */
   0,
 
   /* Variable: b_diagEna
    * Referenced by: '<S4>/b_diagEna'
+    * Wlacza funkcje diagnostyczne sterownika.
    */
   1,
 
@@ -375,6 +416,7 @@ P rtP_Motor = {
    * Referenced by:
    *   '<S6>/b_fieldWeakEna'
    *   '<S97>/b_fieldWeakEna'
+  * Wlacza oslabianie pola powyzej ustawionego progu predkosci.
    */
   0
 };                                     /* Modifiable parameters */

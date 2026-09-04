@@ -58,6 +58,7 @@ extern uint8_t buzzerFreq;              // global variable for the buzzer pitch.
 extern uint8_t buzzerPattern;           // global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
 
 extern uint8_t enable;                  // global variable for motor enable
+extern int16_t motor_dc_curr;           // motor DC-link current, current * 100
 
 
 
@@ -117,6 +118,8 @@ int16_t errCode_Master = 0;
 int16_t errCode_Slave = 0;
 
 int16_t speedSlave_meas;                // SpeedL_meas from Slave.
+int16_t motor_dc_curr_Master = 0;       // Master current received by Slave, current * 100
+int16_t motor_dc_curr_Slave = 0;        // Slave current received by Master, current * 100
 
 int16_t enableMotors;                   // Command enable motors from uart1
 int16_t controlMode = 0;
@@ -124,8 +127,6 @@ int16_t enableFinMaster;
 int16_t enableFinSlave;
 int countTest;
 int16_t chargeStatus;                   // Status charge connection.
-
-int16_t controlMode;
 uint8_t ctrlModReqRaw = CTRL_MOD_REQ;
 uint8_t ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
 
@@ -202,6 +203,8 @@ typedef struct{
   int16_t   enableFinMaster;
   int16_t   enableFinSlave;
   int16_t   chargeStatus;
+  int16_t   motor_dc_currMaster;
+  int16_t   motor_dc_currSlave;
   uint16_t  cmdLed;
   uint16_t  checksum;
 } SerialFeedback;
@@ -223,6 +226,7 @@ typedef struct{
   int16_t   enableFin;      // Slave to Master
   int16_t   chargeStatus;   // Master to Slave
   uint16_t  cmdLed;         // Master to Slave
+  int16_t   motor_dc_curr;  // Master/Slave current * 100
   uint16_t  checksum;       // Master/Slave
 } SerialSend_Usart2;
 static SerialSend_Usart2 Send_Usart2;
@@ -266,8 +270,6 @@ static uint32_t Sideboard_R_len = sizeof(Sideboard_R);
 
 #if defined(CONTROL_SERIAL_USART2)
 static SerialUart2 commandL;
-static SerialUart2 commandL_raw;
-static uint32_t commandL_len = sizeof(commandL);
   // #ifdef CONTROL_IBUS
   // static uint16_t ibusL_captured_value[IBUS_NUM_CHANNELS];
   // #endif
@@ -275,8 +277,6 @@ static uint32_t commandL_len = sizeof(commandL);
 
 #if defined(CONTROL_SERIAL_USART1)
 static SerialUart1 commandR;
-static SerialUart1 commandR_raw;
-static uint32_t commandR_len = sizeof(commandR);
   #ifdef CONTROL_IBUS
   static uint16_t ibusR_captured_value[IBUS_NUM_CHANNELS];
   #endif
@@ -382,26 +382,37 @@ void Input_Init(void) {
   #endif
   
   #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
-    uint16_t writeCheck, readVal;
+    uint16_t savedValues[NB_OF_VAR] = {0};
+    uint8_t configValid = 0;
     HAL_FLASH_Unlock();
-    EE_Init();            /* EEPROM Init */
-    EE_ReadVariable(VirtAddVarTab[0], &writeCheck);
-    if (writeCheck == FLASH_WRITE_KEY) {
+    if (EE_Init() == HAL_OK &&
+        EE_ReadVariable(VirtAddVarTab[0], &savedValues[0]) == 0 &&
+        savedValues[0] == FLASH_WRITE_KEY) {
+      configValid = 1;
+      for (uint8_t i = 1; i < (3 + 8 * INPUTS_NR); i++) {
+        if (EE_ReadVariable(VirtAddVarTab[i], &savedValues[i]) != 0) {
+          configValid = 0;
+          break;
+        }
+      }
+    }
+
+    if (configValid) {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Using the configuration from EEprom\r\n");
       #endif
 
-      EE_ReadVariable(VirtAddVarTab[1] , &readVal); rtP_Motor.i_max = (int16_t)readVal;
-      EE_ReadVariable(VirtAddVarTab[2] , &readVal); rtP_Motor.n_max = (int16_t)readVal;
+      rtP_Motor.i_max = (int16_t)savedValues[1];
+      rtP_Motor.n_max = (int16_t)savedValues[2];
       for (uint8_t i=0; i<INPUTS_NR; i++) {
-        EE_ReadVariable(VirtAddVarTab[ 3+8*i] , &readVal); input1[i].typ = (uint8_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[ 4+8*i] , &readVal); input1[i].min = (int16_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[ 5+8*i] , &readVal); input1[i].mid = (int16_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[ 6+8*i] , &readVal); input1[i].max = (int16_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[ 7+8*i] , &readVal); input2[i].typ = (uint8_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[ 8+8*i] , &readVal); input2[i].min = (int16_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[ 9+8*i] , &readVal); input2[i].mid = (int16_t)readVal;
-        EE_ReadVariable(VirtAddVarTab[10+8*i] , &readVal); input2[i].max = (int16_t)readVal;
+        input1[i].typ = (uint8_t)savedValues[3+8*i];
+        input1[i].min = (int16_t)savedValues[4+8*i];
+        input1[i].mid = (int16_t)savedValues[5+8*i];
+        input1[i].max = (int16_t)savedValues[6+8*i];
+        input2[i].typ = (uint8_t)savedValues[7+8*i];
+        input2[i].min = (int16_t)savedValues[8+8*i];
+        input2[i].mid = (int16_t)savedValues[9+8*i];
+        input2[i].max = (int16_t)savedValues[10+8*i];
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART1)
         printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
           input1[i].typ, input1[i].min, input1[i].mid, input1[i].max,
@@ -949,6 +960,7 @@ void readInputRaw(void) {
         errCode_Master            = commandL.errCode;                 // BOARD SLAVE    <= Message errCode            <= BOARD MASTER.
         chargeStatus              = commandL.chargeStatus;            // BOARD SLAVE    <= Message chargeStatus       <= BOARD MASTER.
         cmdLed_Master             = commandL.cmdLed;
+        motor_dc_curr_Master       = commandL.motor_dc_curr;
         //cmdLed = (cmdLed & ~mask) | (commandL.cmdLed & mask);
         #endif
         // Message Slave => Master
@@ -957,6 +969,7 @@ void readInputRaw(void) {
         board_temp_deg_c_Slave    = commandL.boardTemp;               // BOARD MASTER   <= Message boardTemp          <= BOARD SLAVE.
         errCode_Slave             = commandL.errCode;                 // BOARD MASTER   <= Message errCode            <= BOARD SLAVE.
         enableFinSlave            = commandL.enableFin;
+        motor_dc_curr_Slave       = commandL.motor_dc_curr;
         // #endif
       #endif
     }
@@ -1240,6 +1253,72 @@ void readCommand(void) {
  * Check for new data received on USART2 with DMA: refactored function from https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx
  * - this function is called for every USART IDLE line detection, in the USART interrupt handler
  */
+#if defined(CONTROL_SERIAL_USART1)
+static uint8_t usart1_rx_feed(uint8_t byte)
+{
+  static SerialUart1 frame;
+  static uint16_t framePos;
+  uint8_t *frameBytes = (uint8_t *)&frame;
+
+  if (framePos == 0) {
+    if (byte != (uint8_t)(SERIAL_START_FRAME & 0xFFU)) {
+      return 0;
+    }
+    frameBytes[framePos++] = byte;
+    return 0;
+  }
+
+  if (framePos == 1 && byte != (uint8_t)(SERIAL_START_FRAME >> 8)) {
+    framePos = 0;
+    if (byte == (uint8_t)(SERIAL_START_FRAME & 0xFFU)) {
+      frameBytes[framePos++] = byte;
+    }
+    return 0;
+  }
+
+  frameBytes[framePos++] = byte;
+  if (framePos < sizeof(frame)) {
+    return 0;
+  }
+
+  framePos = 0;
+  return usart1_process_command(&frame, &commandR, 1);
+}
+#endif
+
+#if defined(CONTROL_SERIAL_USART2)
+static uint8_t usart2_rx_feed(uint8_t byte)
+{
+  static SerialUart2 frame;
+  static uint16_t framePos;
+  uint8_t *frameBytes = (uint8_t *)&frame;
+
+  if (framePos == 0) {
+    if (byte != (uint8_t)(SERIAL_START_FRAME & 0xFFU)) {
+      return 0;
+    }
+    frameBytes[framePos++] = byte;
+    return 0;
+  }
+
+  if (framePos == 1 && byte != (uint8_t)(SERIAL_START_FRAME >> 8)) {
+    framePos = 0;
+    if (byte == (uint8_t)(SERIAL_START_FRAME & 0xFFU)) {
+      frameBytes[framePos++] = byte;
+    }
+    return 0;
+  }
+
+  frameBytes[framePos++] = byte;
+  if (framePos < sizeof(frame)) {
+    return 0;
+  }
+
+  framePos = 0;
+  return usart2_process_command(&frame, &commandL, 2);
+}
+#endif
+
 void usart2_rx_check(void)
 {
   #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)  
@@ -1264,29 +1343,21 @@ void usart2_rx_check(void)
   #endif // DEBUG_SERIAL_USART2
 
   #ifdef CONTROL_SERIAL_USART2
-  uint8_t *ptr;	
   if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&commandL_raw;                                     // Initialize the pointer with command_raw address
-    if (pos > old_pos && (pos - old_pos) == commandL_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_L[old_pos], commandL_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart2_process_command(&commandL_raw, &commandL, 2);              // Process data
-    } else if ((rx_buffer_L_len - old_pos + pos) == commandL_len) {     // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in command_raw
-        memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
+    uint32_t index = old_pos;
+    while (index != pos) {
+      if (usart2_rx_feed(rx_buffer_L[index])) {
+        #ifdef BOARD_SLAVE
+          usart2_tx_Send();
+        #else
+          usart1_tx_Send();
+        #endif
       }
-      usart2_process_command(&commandL_raw, &commandL, 2);              // Process data
+      index++;
+      if (index == rx_buffer_L_len) {
+        index = 0;
+      }
     }
-  #ifdef BOARD_SLAVE
-  // ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
-  //                                          ^        =>        ^              
-    usart2_tx_Send(); // send feedback to Master in case we are on BOARD SLAVE. This is needed to have a more responsive control, since the Master doesn't wait for the Slave response to send the next command, but it just sends them with a fixed delay.
-  #else
-  // ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
-  //                                                             ^        =>        ^ 
-    usart1_tx_Send(); // Received data from Slave on Usart2 connecting data with Master, so we send back the data on ESP32 on Usart1
-  #endif
   }
   #endif // CONTROL_SERIAL_USART2
 
@@ -1346,27 +1417,17 @@ void usart1_rx_check(void)
   #endif // DEBUG_SERIAL_USART1
 
   #ifdef CONTROL_SERIAL_USART1
-  uint8_t *ptr;
   if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&commandR_raw;                                     // Initialize the pointer with command_raw address
-    if (pos > old_pos && (pos - old_pos) == commandR_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_R[old_pos], commandR_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart1_process_command(&commandR_raw, &commandR, 1);              // Process data
-    } else if ((rx_buffer_R_len - old_pos + pos) == commandR_len) {     // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in command_raw
-        memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
+    uint32_t index = old_pos;
+    while (index != pos) {
+      if (usart1_rx_feed(rx_buffer_R[index])) {
+        usart2_tx_Send();
       }
-      usart1_process_command(&commandR_raw, &commandR, 1);              // Process data
+      index++;
+      if (index == rx_buffer_R_len) {
+        index = 0;
+      }
     }
-///////////////////////////////////////////// TESTY
-// Communication architecture: Type UART
-// ESP32 => Usart1 => Master => Usart2 => Slave => Usart2 => Master => Usart1 => ESP32
-//                      ^         =>        ^        
-                      // Usart1 recived data to control BOARD MASTER, so we send back the data on USART2 to control BOARD SLAVE,
-    usart2_tx_Send(); // Send data on USART2 in case we are on BOARD SLAVE.
-///////////////////////////////////////////// TESTY
   }
   #endif // CONTROL_SERIAL_USART1
 
@@ -1414,7 +1475,7 @@ void usart_process_debug(uint8_t *userCommand, uint32_t len)
  * - if the command_in data is valid (correct START_FRAME and checksum) copy the command_in to command_out
  */
 #if defined(CONTROL_SERIAL_USART1)
-void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx) 
+uint8_t usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx) 
 {
   #ifdef CONTROL_IBUS
     uint16_t ibus_chksum;
@@ -1436,6 +1497,7 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
           timeoutCntSerial_R = 0;         // Reset timeout counter
           #endif
         }
+        return 1;
       }
     }
   #else
@@ -1453,14 +1515,16 @@ void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, u
         timeoutFlgSerial_R = 0;         // Clear timeout flag
         timeoutCntSerial_R = 0;         // Reset timeout counter
       }
+      return 1;
     }
   }
   #endif
+  return 0;
 }
 #endif
 
 #if defined(CONTROL_SERIAL_USART2)
-void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx) 
+uint8_t usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx) 
 {
   #ifdef CONTROL_IBUS
     uint16_t ibus_chksum;
@@ -1482,6 +1546,7 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
           timeoutCntSerial_R = 0;         // Reset timeout counter
           #endif
         }
+        return 1;
       }
     }
   #else
@@ -1499,7 +1564,8 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
                           command_in->errCode ^
                           command_in->enableFin ^
                           command_in->chargeStatus ^
-                          command_in->cmdLed);
+                          command_in->cmdLed ^
+                          command_in->motor_dc_curr);
                           
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
@@ -1507,9 +1573,11 @@ void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, u
         timeoutFlgSerial_L = 0;         // Clear timeout flag
         timeoutCntSerial_L = 0;         // Reset timeout counter
       }
+      return 1;
     }
   }
   #endif
+  return 0;
 }
 #endif
 
@@ -1555,6 +1623,8 @@ void usart1_tx_Send(void)
   Feedback.enableFinMaster	= (int16_t)enableFinMaster;                 // MASTER   => enableFinMaster         => ARDUINO.
   Feedback.enableFinSlave	  = (int16_t)enableFinSlave;                  // MASTER   => enableFinSlave          => ARDUINO.
   Feedback.chargeStatus     = (int16_t)chargeStatus;                    // MASTER   => ChargeStatus            => ARDUINO.
+  Feedback.motor_dc_currMaster = (int16_t)motor_dc_curr;
+  Feedback.motor_dc_currSlave  = (int16_t)motor_dc_curr_Slave;
         
   if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
     Feedback.cmdLed     = (uint16_t)cmdLed;
@@ -1569,6 +1639,8 @@ void usart1_tx_Send(void)
                                       Feedback.enableFinMaster ^
                                       Feedback.enableFinSlave ^
                                       Feedback.chargeStatus ^
+                                      Feedback.motor_dc_currMaster ^
+                                      Feedback.motor_dc_currSlave ^
                                       Feedback.cmdLed);
     // TR USART1
     HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&Feedback, sizeof(Feedback));
@@ -1592,6 +1664,7 @@ void usart2_tx_Send(void)
     Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
     Send_Usart2.cmdLed            = (int16_t)cmdLed;
+    Send_Usart2.motor_dc_curr     = (int16_t)motor_dc_curr;
   #endif
   //USART2 SLAVE => MASTER//
   #ifdef BOARD_SLAVE
@@ -1607,6 +1680,7 @@ void usart2_tx_Send(void)
     Send_Usart2.enableFin         = (int16_t)enableFinSlave;            // MASTER   => enableFinSlave   <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)0U;                        // SLAVE    => ChargeStatus      => MASTER.
     Send_Usart2.cmdLed            = (int16_t)0U;
+    Send_Usart2.motor_dc_curr     = (int16_t)motor_dc_curr;
   #endif
         
   if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
@@ -1621,7 +1695,8 @@ void usart2_tx_Send(void)
                                         Send_Usart2.errCode ^ 
                                         Send_Usart2.enableFin ^
                                         Send_Usart2.chargeStatus ^
-                                        Send_Usart2.cmdLed);
+                                        Send_Usart2.cmdLed ^
+                                        Send_Usart2.motor_dc_curr);
     // TR USART2
     HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&Send_Usart2, sizeof(Send_Usart2));
   }
@@ -1785,10 +1860,11 @@ void Set_LED_OFF() { // gasi wszystkie oprpcz włącznika
 
 void Set_LED (int LEDnum, int Red, int Green, int Blue)
 {
+  if (LEDnum < 0 || LEDnum >= MAX_LED) return;
 	LED_Data[LEDnum][0] = LEDnum;
-	LED_Data[LEDnum][1] = Green;
-	LED_Data[LEDnum][2] = Red;
-	LED_Data[LEDnum][3] = Blue;
+  LED_Data[LEDnum][1] = CLAMP(Green, 0, 255);
+  LED_Data[LEDnum][2] = CLAMP(Red, 0, 255);
+  LED_Data[LEDnum][3] = CLAMP(Blue, 0, 255);
 }
 
 void WS2812_UpdateIfChanged(void) {
@@ -1816,7 +1892,7 @@ void WS2812_UpdateIfChanged(void) {
   for (int i = 0; i < MAX_LED; i++) {
     uint32_t color = (LED_Data[i][1] << 16) | (LED_Data[i][2] << 8) | LED_Data[i][3];
     for (int bit = 23; bit >= 0; bit--) {
-      pwmData[indx++] = (color & (1 << bit)) ? 55 : 25;
+      pwmData[indx++] = (color & (1UL << bit)) ? WS2812B_PWM_T1H : WS2812B_PWM_T0H;
     }
   }
 
@@ -1826,7 +1902,9 @@ void WS2812_UpdateIfChanged(void) {
   }
 
   dma_ready = 0;
-  HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
+  if (HAL_TIM_PWM_Start_DMA(&htim4, TIM_CHANNEL_2, (uint32_t *)pwmData, indx) != HAL_OK) {
+    dma_ready = 1;
+  }
 }
 
 
@@ -2008,7 +2086,7 @@ void saveConfig() {
       #endif
 
       HAL_FLASH_Unlock();
-      EE_WriteVariable(VirtAddVarTab[0] , (uint16_t)FLASH_WRITE_KEY);
+      EE_WriteVariable(VirtAddVarTab[0] , 0);
       EE_WriteVariable(VirtAddVarTab[1] , (uint16_t)rtP_Motor.i_max);
       EE_WriteVariable(VirtAddVarTab[2] , (uint16_t)rtP_Motor.n_max);
       for (uint8_t i=0; i<INPUTS_NR; i++) {
@@ -2021,6 +2099,7 @@ void saveConfig() {
         EE_WriteVariable(VirtAddVarTab[ 9+8*i] , (uint16_t)input2[i].mid);
         EE_WriteVariable(VirtAddVarTab[10+8*i] , (uint16_t)input2[i].max);
       }
+      EE_WriteVariable(VirtAddVarTab[0] , (uint16_t)FLASH_WRITE_KEY);
       HAL_FLASH_Lock();
     }
   #endif 

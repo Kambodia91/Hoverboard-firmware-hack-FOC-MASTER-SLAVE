@@ -90,7 +90,7 @@
 #define BOARD_SLAVE                       // board slave
 
 #ifdef BOARD_MASTER
-#define LEFT_SIDE
+// #define LEFT_SIDE
 // #define RIGHT_SIDE
 #endif
 
@@ -110,6 +110,9 @@
 #define HUE_STEP                1.0f      // Hue changes update (0.0 - 360.0)
 #define SATURATION              1.0f      // Constant saturation (0.0 - 1.0)
 #define BRIGHTNESS              0.5f      // Constant brightness (0.0 - 1.0)
+#define WS2812B_PWM_PERIOD      79U       // 64 MHz / 80 = 800 kHz bit rate
+#define WS2812B_PWM_T0H         22U       // 0.344 us high time for bit 0
+#define WS2812B_PWM_T1H         50U       // 0.781 us high time for bit 1
 
 // ######################## END OF LED WS2812B ###############################
 

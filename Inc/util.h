@@ -69,6 +69,7 @@
       int16_t   enableFin;      // Master  <=> Slawe
       int16_t   chargeStatus;   // Master  <=> Slawe
       uint16_t  cmdLed;         // Master  <=  Slawe
+      int16_t   motor_dc_curr;  // Master  <=> Slave, current * 100
       uint16_t  checksum;       // 
     } SerialUart2;
   // #endif
@@ -134,10 +135,10 @@ void usart2_tx_Send(void);    // SEND   // Master <=> Slave.
 void usart_process_debug(uint8_t *userCommand, uint32_t len);
 #endif
 #if defined(CONTROL_SERIAL_USART1)    //  Uart1 Master/Arduino
-void usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx);
+uint8_t usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out, uint8_t usart_idx);
 #endif
 #if defined(CONTROL_SERIAL_USART2)    //  Uart2 Master/Slave
-void usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx);
+uint8_t usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx);
 #endif
 #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
 void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sideboard_out, uint8_t usart_idx);

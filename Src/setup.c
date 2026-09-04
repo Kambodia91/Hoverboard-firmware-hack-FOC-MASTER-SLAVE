@@ -345,7 +345,7 @@ void WS2812B_Init(void) {
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 0;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 79;
+  htim4.Init.Period = WS2812B_PWM_PERIOD;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   //HAL_TIM_Base_Init(&htim4);
@@ -363,7 +363,7 @@ void WS2812B_Init(void) {
   sConfigOC4.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC4.OCFastMode = TIM_OCFAST_ENABLE;
   HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC4, TIM_CHANNEL_2);
-  //__HAL_TIM_DISABLE_OCxPRELOAD(&htim4, TIM_CHANNEL_2);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&htim4, TIM_CHANNEL_2);
 
 
   //HAL_TIM_MspPostInit(&htim4);
