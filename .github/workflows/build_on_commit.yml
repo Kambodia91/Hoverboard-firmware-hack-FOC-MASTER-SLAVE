@@ -20,7 +20,7 @@ jobs:
           pip install --upgrade platformio
 
       - name: PlatformIO Run
-        run: pio run
+        run: pio run -e VARIANT_USART
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
