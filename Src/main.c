@@ -89,10 +89,10 @@ extern int16_t chargeStatus;                    // Status connection charge.
 extern int16_t batVoltage;                      // global variable for battery voltage
 
 #if defined(SIDEBOARD_SERIAL_USART2)
-extern SerialSideboard Sideboard_L;
+extern SerialSideboard Sideboard_USART2;
 #endif
 #if defined(SIDEBOARD_SERIAL_USART1)
-extern SerialSideboard Sideboard_R;
+extern SerialSideboard Sideboard_USART1;
 #endif
 #if (defined(CONTROL_PPM_LEFT) && defined(DEBUG_SERIAL_USART1)) || (defined(CONTROL_PPM_RIGHT) && defined(DEBUG_SERIAL_USART2))
 extern volatile uint16_t ppm_captured_value[PPM_NUM_CHANNELS+1];
@@ -465,13 +465,13 @@ int main(void) {
 
     // ####### SIDEBOARDS HANDLING #######
     #if defined(SIDEBOARD_SERIAL_USART2)
-      sideboardSensors((uint8_t)Sideboard_L.sensors);
+      sideboardSensors((uint8_t)Sideboard_USART2.sensors);
     #endif
     #if defined(FEEDBACK_SERIAL_USART2)
-      //sideboardLeds(&sideboard_leds_L);
+      //sideboardLeds(&sideboard_leds_USART2);
     #endif
     #if defined(SIDEBOARD_SERIAL_USART1)
-      sideboardSensors((uint8_t)Sideboard_R.sensors);
+      sideboardSensors((uint8_t)Sideboard_USART1.sensors);
     #endif
 
     // ####### LEDS HANDLING #######

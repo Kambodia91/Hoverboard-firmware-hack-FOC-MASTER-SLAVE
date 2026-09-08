@@ -1,33 +1,71 @@
-||                        COMMUNICATION UART                                ||
-|| UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
-|| BOARD     |  Command:          || BOARD    |  Command:          || BOARD ||
-|| ARDUINO   => StartFrame        => MASTER   => StartFrame        => SLAVE ||
-|| ARDUINO   => ControlMode       => MASTER   => controlMode       => SLAVE ||
-|| ARDUINO   => EnableMotors      => MASTER   => enableMotors      => SLAVE ||
-|| ARDUINO   => SpeedMaster       => MASTER   => speedMaster       => SLAVE ||
-|| ARDUINO   => SpeedSlave        => MASTER   => speedSlave        => SLAVE ||
-||                                   MASTER   => speedSlave_meas   => SLAVE ||
-||                                   MASTER   => bateryVoltage     => SLAVE ||
-||                                   MASTER   => boardTemp         => SLAVE ||
-||                                   MASTER   => enableFin         => SLAVE ||
-||                                   MASTER   => errCode           => SLAVE ||
-||                                   MASTER   => ChargeStatus      => SLAVE ||
-|| ARDUINO   => checksum          => MASTER   => checksum          => SLAVE ||
+COMMUNICATION UART - VARIANT_USART
 
-|| UART1 MASTER/ARDUINO           || UART2 MASTER/SLAVE                     ||
-|| BOARD     | Command:           || BOARD    |   Command:         || BOARD ||
-|| ARDUINO  <= StartFrame        <=  MASTER    <= StartFrame       <= SLAVE ||
-                                     MASTER    <= controlMode      <= SLAVE ||
-|| ARDUINO  <= cmd1              <=  MASTER    <= speedMaster      <= SLAVE ||
-|| ARDUINO  <= cmd2              <=  MASTER    <= speedSlave       <= SLAVE ||
-|| ARDUINO  <= speedR_meas       <=  MASTER                                 ||  
-|| ARDUINO  <= speedL_meas       <=  MASTER    <= speedSlave_meas  <= SLAVE ||
-|| ARDUINO  <= batVoltage        <=  MASTER    <= bateryVoltage    <= SLAVE ||
-|| ARDUINO  <= boardTempMaster   <=  MASTER                                 ||
-|| ARDUINO  <= boardTempSlave    <=  MASTER    <= boardTemp        <= SLAVE ||
-|| ARDUINO  <= enableFinMaster   <=  MASTER                                 ||
-|| ARDUINO  <= enableFinSlave    <=  MASTER    <= enableFin        <= Slave ||
-||                                   MASTER    <= errCode          <= SLAVE ||
-|| ARDUINO  <= chargeStatus      <=  MASTER    <= ChargeStatus     <= SLAVE ||
-|| ARDUINO  <= cmdLed            <=  MASTER                                 ||
-|| ARDUINO  <= checksum          <=  MASTER    <= checksum         <= SLAVE ||
+UART1: ARDUINO <-> MASTER
+
+Arduino => Master: SerialUart1 (CONTROL_SERIAL_USART1)
+    start
+    enableMotors
+    controlMode
+    speedMaster
+    speedSlave
+    checksum
+
+Master => Arduino: SerialFeedback (FEEDBACK_SERIAL_USART1)
+    start
+    cmd1                    // command input 1
+    cmd2                    // command input 2
+    speedMaster_meas        // measured speed of Master motor
+    speedSlave_meas         // measured speed received from Slave
+    batVoltage
+    boardTempMaster
+    boardTempSlave
+    enableFinMaster
+    enableFinSlave
+    chargeStatus
+    motor_dc_currMaster     // Master current * 100
+    motor_dc_currSlave      // Slave current * 100
+    cmdLed
+    checksum
+
+
+UART2: MASTER <-> SLAVE
+
+Both directions use SerialUart2 / SerialSend_Usart2. The frame has the
+same field order in both directions; fields not owned by the sender are
+sent as zero.
+
+Master => Slave:
+    start
+    enableMotors
+    controlMode
+    speedMaster = 0
+    speedSlave
+    speedSlave_meas = 0
+    bateryVoltage
+    boardTemp             // Master board temperature
+    errCode               // Master error code
+    enableFin = 0
+    chargeStatus
+    cmdLed
+    motor_dc_curr         // Master current * 100
+    checksum
+
+Slave => Master:
+    start
+    enableMotors = 0
+    controlMode = 0
+    speedMaster = 0
+    speedSlave = 0
+    speedSlave_meas       // Slave measured speed
+    bateryVoltage = 0
+    boardTemp             // Slave board temperature
+    errCode               // Slave error code
+    enableFin              // Slave enable feedback
+    chargeStatus = 0
+    cmdLed = 0
+    motor_dc_curr         // Slave current * 100
+    checksum
+
+The Master combines the UART2 data into UART1 feedback:
+    motor_dc_currMaster = local Master current
+    motor_dc_currSlave  = motor_dc_curr received from Slave

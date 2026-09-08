@@ -46,8 +46,8 @@ typedef struct{
    uint16_t start;
    int16_t  enableMotors;
    int16_t  controlMode;
-   int16_t  speedMaster;
-   int16_t  speedSlave;
+    int16_t  speedMaster;
+    int16_t  speedSlave;
    uint16_t checksum;
 } SerialCommand;
 SerialCommand Command;
@@ -56,19 +56,24 @@ typedef struct{
    uint16_t start;
    int16_t  cmd1;
    int16_t  cmd2;
-   int16_t  speedR_meas;
-   int16_t  speedL_meas;
+  int16_t  speedMaster_meas;
+  int16_t  speedSlave_meas;
    int16_t  batVoltage;
    int16_t  boardTempMaster;
    int16_t  boardTempSlave;
    int16_t  enableFinMaster;
    int16_t  enableFinSlave;
    int16_t  chargeStatus;
+    int16_t  motor_dc_currMaster;
+    int16_t  motor_dc_currSlave;
    uint16_t cmdLed;
    uint16_t checksum;
 } SerialFeedback;
 SerialFeedback Feedback;
 SerialFeedback NewFeedback;
+
+static_assert(sizeof(SerialCommand) == 12, "SerialCommand size does not match Master UART1");
+static_assert(sizeof(SerialFeedback) == 30, "SerialFeedback size does not match Master UART1");
 
 // ########################## SETUP ##########################
 void setup() 
@@ -89,7 +94,11 @@ void Send(int16_t uEnableMotors, int16_t uControlMode, int16_t uSpeedMaster, int
   Command.controlMode     = (int16_t)uControlMode;    // ARDUINO  => MASTER HOVER.
   Command.speedMaster     = (int16_t)uSpeedMaster;    // ARDUINO  => MASTER HOVER.
   Command.speedSlave      = (int16_t)uSpeedSlave;     // ARDUINO  => MASTER HOVER.
-  Command.checksum        = (uint16_t)(Command.start ^ Command.enableMotors ^ Command.speedMaster ^ Command.speedSlave);
+  Command.checksum        = (uint16_t)(Command.start ^
+                                       Command.enableMotors ^
+                                       Command.controlMode ^
+                                       Command.speedMaster ^
+                                       Command.speedSlave);
 
   // Write to Serial
   Serial2.write((uint8_t *) &Command, sizeof(Command)); 
@@ -130,14 +139,16 @@ void Receive()
         checksum = (uint16_t)(NewFeedback.start ^ 
                               NewFeedback.cmd1 ^ 
                               NewFeedback.cmd2 ^ 
-                              NewFeedback.speedR_meas ^ 
-                              NewFeedback.speedL_meas ^ 
+                              NewFeedback.speedMaster_meas ^ 
+                              NewFeedback.speedSlave_meas ^ 
                               NewFeedback.batVoltage ^ 
                               NewFeedback.boardTempMaster ^ 
                               NewFeedback.boardTempSlave ^ 
                               NewFeedback.enableFinMaster ^ 
                               NewFeedback.enableFinSlave ^ 
                               NewFeedback.chargeStatus ^ 
+                              NewFeedback.motor_dc_currMaster ^
+                              NewFeedback.motor_dc_currSlave ^
                               NewFeedback.cmdLed);
 
         // Check validity of the new data
@@ -148,15 +159,17 @@ void Receive()
             // Print data to built-in Serial
             Serial.print("1: ");   Serial.print(Feedback.cmd1);
             Serial.print(" 2: ");  Serial.print(Feedback.cmd2);
-            Serial.print(" 3: ");  Serial.print(Feedback.speedR_meas);
-            Serial.print(" 4: ");  Serial.print(Feedback.speedL_meas);
+            Serial.print(" 3: ");  Serial.print(Feedback.speedMaster_meas);
+            Serial.print(" 4: ");  Serial.print(Feedback.speedSlave_meas);
             Serial.print(" 5: ");  Serial.print(Feedback.batVoltage);
             Serial.print(" 6: ");  Serial.print(Feedback.boardTempMaster);
             Serial.print(" 7: ");  Serial.print(Feedback.boardTempSlave);
             Serial.print(" 8: ");  Serial.print(Feedback.enableFinMaster);
             Serial.print(" 9: ");  Serial.print(Feedback.enableFinSlave);
             Serial.print(" 10: ");  Serial.print(Feedback.chargeStatus);
-            Serial.print(" 11: ");  Serial.println(Feedback.cmdLed);
+            Serial.print(" 11: ");  Serial.print(Feedback.motor_dc_currMaster / 100.0f);
+            Serial.print(" A 12: "); Serial.print(Feedback.motor_dc_currSlave / 100.0f);
+            Serial.print(" A 13: "); Serial.println(Feedback.cmdLed);
         } else {
           Serial.println("Non-valid data skipped");
         }
