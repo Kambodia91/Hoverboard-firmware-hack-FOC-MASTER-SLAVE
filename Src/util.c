@@ -328,7 +328,7 @@ static uint8_t standstillAcv = 0;
 void BLDC_Init(void) {
   /* Set BLDC controller parameters */ 
   rtP_Motor.b_angleMeasEna       = 0;            // Motor angle input: 0 = estimated angle, 1 = measured angle (e.g. if encoder is available)
-  rtP_Motor.z_selPhaCurMeasABC   = 1;            // motor measured current phases {Blue, Yellow} = {iB, iC} -> do NOT change
+  rtP_Motor.z_selPhaCurMeasABC   = 1;            // measured phases {Green, Yellow} = {V, W} = {iB, iC} -> do NOT change
   rtP_Motor.z_ctrlTypSel         = CTRL_TYP_SEL;
   rtP_Motor.b_diagEna            = DIAG_ENA;
   rtP_Motor.i_max                = (I_MOT_MAX * A2BIT_CONV) << 4;        // fixdt(1,16,4)

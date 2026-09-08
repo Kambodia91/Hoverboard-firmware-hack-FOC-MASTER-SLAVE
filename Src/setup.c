@@ -26,11 +26,9 @@ adc1,adc2 triggered by tim3 trgo
 adc 1,2 dual mode
 
 ADC1             ADC2
-R_Blau PC4 CH14  R_Gelb PC5 CH15
-L_Grün PA0 CH01  L_Blau PC3 CH13
-R_DC PC1 CH11    L_DC PC0 CH10
-BAT   PC2 CH12   L_TX PA2 CH02
-BAT   PC2 CH12   L_RX PA3 CH03
+Phase V Green PA1 CH01  Phase W Yellow PA0 CH00
+R/Battery PA5 CH05      Battery PA4 CH04
+Internal temp           White wire PB1 CH09
 
 pb10 usart1 dma1 channel2/3
 */
@@ -699,7 +697,7 @@ void MX_ADC1_Init(void) {
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
   sConfig.SamplingTime = ADC_SAMPLETIME_7CYCLES_5;
-  sConfig.Channel = ADC_CHANNEL_1;                      // PA1 BLDC Current Phase B
+  sConfig.Channel = ADC_CHANNEL_1;                      // PA1 BLDC current, phase V (Green), input i_phaAB
   sConfig.Rank    = 2;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
@@ -747,7 +745,7 @@ void MX_ADC2_Init(void) {
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
 
   sConfig.SamplingTime = ADC_SAMPLETIME_7CYCLES_5;
-  sConfig.Channel = ADC_CHANNEL_0;                  // PA0 BLDC Current Phase C
+  sConfig.Channel = ADC_CHANNEL_0;                  // PA0 BLDC current, phase W (Yellow), input i_phaBC
   sConfig.Rank    = 2;
   HAL_ADC_ConfigChannel(&hadc2, &sConfig);
 

@@ -182,8 +182,8 @@ void DMA1_Channel1_IRQHandler(void) {
     rtU_Motor.b_hallA       = hall_u;
     rtU_Motor.b_hallB       = hall_v;
     rtU_Motor.b_hallC       = hall_w;
-    rtU_Motor.i_phaAB       = cur_phaB;
-    rtU_Motor.i_phaBC       = cur_phaC;
+    rtU_Motor.i_phaAB       = cur_phaB; // Phase V / Green
+    rtU_Motor.i_phaBC       = cur_phaC; // Phase W / Yellow
     rtU_Motor.i_DCLink      = cur_DC;
     // rtU_Motor.a_mechAngle   = ...; // Angle input in DEGREES [0,360] in fixdt(1,16,4) data type. If `angle` is float use `= (int16_t)floor(angle * 16.0F)` If `angle` is integer use `= (int16_t)(angle << 4)`
 
