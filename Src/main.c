@@ -139,7 +139,6 @@ uint32_t dtcycle;
   static uint16_t transpotter_counter = 0;
 #endif
 
-//uint8_t board_leds;
 
 #ifndef VARIANT_TRANSPOTTER
   static int16_t  speedMaster;                  // local variable for steering. -1000 to 1000
@@ -478,9 +477,7 @@ int main(void) {
     #ifdef BOARD_SLAVE
     cmdLed = cmdLed_Master & mask;
     #endif
-    #ifdef BOARD_MASTER
-    //cmdLed = 1;
-    #endif
+    
     Leds(&cmdLed);
     handle_leds();  // Show Leds
 
