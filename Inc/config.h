@@ -86,12 +86,12 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-#define BOARD_MASTER                      // board master
-// #define BOARD_SLAVE                       // board slave
+// #define BOARD_MASTER                      // board master
+#define BOARD_SLAVE                       // board slave
 
 #ifdef BOARD_MASTER
-// #define LEFT_SIDE
-// #define RIGHT_SIDE
+#define LEFT_SIDE // prawa strona stojac za kosiarka, patrzac w kierunku jazdy
+// #define RIGHT_SIDE // lewa strona stojac za kosiarka, patrzac w kierunku jazdy
 #endif
 
 // Enable/Disable Motor
