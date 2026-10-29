@@ -120,6 +120,11 @@ uint16_t mask = LED1_SET | LED3_SET | LED4_SET | LED7_SET | LED8_SET;
 
 int16_t motor_dc_curr;                          // global variable for Right DC Link current
 int16_t dc_curr;                                // global variable for Total DC Link current 
+int16_t measured_dc_curr;                           // display/telemetry current in 0.01 A
+static int16_t measured_dc_curr_samples[50];
+static int32_t measured_dc_curr_sum;
+static uint8_t measured_dc_curr_index;
+static uint8_t measured_dc_curr_initialized;
 int16_t cmdMaster;                              // global variable for Master Command 
 int16_t cmdSlave;                               // global variable for Slave Command 
 uint32_t dtcycle;
@@ -497,6 +502,24 @@ int main(void) {
     #endif
 
     // ####### CALC DC LINK CURRENT #######
+    // Average the measured DC-link current over 50 main-loop samples. This is
+    // a readout path only; keep the FOC current conversion (A2BIT_CONV) intact.
+    if (!measured_dc_curr_initialized) {
+      for (uint8_t i = 0; i < 50; i++) {
+        measured_dc_curr_samples[i] = rtU_Motor.i_DCLink;
+        measured_dc_curr_sum += rtU_Motor.i_DCLink;
+      }
+      measured_dc_curr_initialized = 1;
+    } else {
+      measured_dc_curr_sum -= measured_dc_curr_samples[measured_dc_curr_index];
+      measured_dc_curr_samples[measured_dc_curr_index] = rtU_Motor.i_DCLink;
+      measured_dc_curr_sum += rtU_Motor.i_DCLink;
+      measured_dc_curr_index++;
+      if (measured_dc_curr_index >= 50) {
+        measured_dc_curr_index = 0;
+      }
+    }
+    measured_dc_curr  = -((measured_dc_curr_sum / 50) * 100) / 4;  // Current in 0.01 A for UART telemetry
     motor_dc_curr = -(rtU_Motor.i_DCLink * 100) / A2BIT_CONV;  // Right DC Link Current * 100
     dc_curr       = motor_dc_curr;            // Total DC Link Current * 100
 

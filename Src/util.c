@@ -59,6 +59,7 @@ extern uint8_t buzzerPattern;           // global variable for the buzzer patter
 
 extern uint8_t enable;                  // global variable for motor enable
 extern int16_t motor_dc_curr;           // motor DC-link current, current * 100
+extern int16_t measured_dc_curr;            // averaged measured current, current * 100
 
 
 
@@ -1623,7 +1624,7 @@ void usart1_tx_Send(void)
   Feedback.enableFinMaster	= (int16_t)enableFinMaster;                 // MASTER   => enableFinMaster         => ARDUINO.
   Feedback.enableFinSlave	  = (int16_t)enableFinSlave;                  // MASTER   => enableFinSlave          => ARDUINO.
   Feedback.chargeStatus     = (int16_t)chargeStatus;                    // MASTER   => ChargeStatus            => ARDUINO.
-  Feedback.motor_dc_currMaster = (int16_t)motor_dc_curr;
+  Feedback.motor_dc_currMaster = (int16_t)measured_dc_curr;
   Feedback.motor_dc_currSlave  = (int16_t)motor_dc_curr_Slave;
         
   if(__HAL_DMA_GET_COUNTER(huart1.hdmatx) == 0) {
@@ -1664,7 +1665,7 @@ void usart2_tx_Send(void)
     Send_Usart2.enableFin         = (int16_t)0U;                        // MASTER   => errCode          <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)chargeStatus;              // MASTER   => ChargeStatus      => SLAVE.
     Send_Usart2.cmdLed            = (int16_t)cmdLed;
-    Send_Usart2.motor_dc_curr     = (int16_t)motor_dc_curr;
+    Send_Usart2.motor_dc_curr     = (int16_t)measured_dc_curr;
   #endif
   //USART2 SLAVE => MASTER//
   #ifdef BOARD_SLAVE
@@ -1680,7 +1681,7 @@ void usart2_tx_Send(void)
     Send_Usart2.enableFin         = (int16_t)enableFinSlave;            // MASTER   => enableFinSlave   <=> SLAVE.
     Send_Usart2.chargeStatus      = (int16_t)0U;                        // SLAVE    => ChargeStatus      => MASTER.
     Send_Usart2.cmdLed            = (int16_t)0U;
-    Send_Usart2.motor_dc_curr     = (int16_t)motor_dc_curr;
+    Send_Usart2.motor_dc_curr     = (int16_t)measured_dc_curr;
   #endif
         
   if(__HAL_DMA_GET_COUNTER(huart2.hdmatx) == 0) {
