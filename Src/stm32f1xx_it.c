@@ -293,7 +293,7 @@ void DMA1_Channel4_IRQHandler(void)
 }
 #endif
 
-#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2)
 /**
 * @brief This function handles DMA1 channel6 global interrupt.
 */
@@ -323,7 +323,7 @@ void DMA1_Channel7_IRQHandler(void)
 }
 #endif
 
-#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1)
 /**
   * @brief This function handles DMA1 channel4 global interrupt.
   */
@@ -352,7 +352,7 @@ void DMA1_Channel5_IRQHandler(void)
 }
 #endif
 
-#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2)
 /**
   * @brief This function handles USART2 global interrupt.
   */
@@ -377,7 +377,7 @@ if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE)) {
 }
 #endif
 
-#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1)
 /**
   * @brief This function handles USART1 global interrupt.
   */

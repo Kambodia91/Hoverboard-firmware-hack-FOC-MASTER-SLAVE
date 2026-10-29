@@ -61,7 +61,7 @@ TIM_HandleTypeDef htim4;
 DMA_HandleTypeDef hdma_tim4_ch2;
 
 
-#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2)
  /* USART2 init function */
  void UART2_Init(void)
 {
@@ -87,7 +87,7 @@ DMA_HandleTypeDef hdma_tim4_ch2;
 }
 #endif
 
-#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1)
 /* USART1 init function */
 void UART1_Init(void)
 {
@@ -117,8 +117,8 @@ void UART1_Init(void)
 }
 #endif
 
-#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || \
-    defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || \
+    defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1)
 void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
@@ -395,12 +395,12 @@ void I2C_Init(void)
 {
   /* Initialise I2C2 GPIO pins
   *  I2C2 GPIO Configuration
-  *  PB6     ------> I2C2_SCL
-  *  PB7     ------> I2C2_SDA
+  *  PB10    ------> I2C2_SCL
+  *  PB11    ------> I2C2_SDA
   */
   GPIO_InitTypeDef GPIO_InitStruct;
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;

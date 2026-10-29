@@ -75,17 +75,6 @@
   // #endif
 #endif
 
-#if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
-    typedef struct {
-      uint16_t  start;
-      int16_t   pitch;      // Angle
-      int16_t   dPitch;     // Angle derivative
-      int16_t   cmd1;       // RC Channel 1
-      int16_t   cmd2;       // RC Channel 2
-      uint16_t  sensors;    // RC Switches and Optical sideboard sensors
-      uint16_t  checksum;
-    } SerialSideboard;
-#endif
 
 // Input Structure
 typedef struct {
@@ -140,13 +129,8 @@ uint8_t usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out
 #if defined(CONTROL_SERIAL_USART2)    //  Uart2 Master/Slave
 uint8_t usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out, uint8_t usart_idx);
 #endif
-#if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
-void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sideboard_out, uint8_t usart_idx);
-#endif
 
-// Sideboard functions
 void Leds(uint16_t *leds);
-void sideboardSensors(uint8_t sensors);
 void handle_leds(void);
 
 // Diode Ws2812b

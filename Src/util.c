@@ -234,39 +234,28 @@ static SerialSend_Usart2 Send_Usart2;
 
 #endif
 #if defined(FEEDBACK_SERIAL_USART2)
-//static uint8_t sideboard_leds_USART2;
 #endif
 //#if defined(FEEDBACK_SERIAL_USART1)
 //extern uint8_t board_leds;
 
 //#endif
 
-#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2)
 static uint8_t  rx_buffer_USART2[SERIAL_BUFFER_SIZE];      // USART2 Rx DMA circular buffer
 static uint32_t rx_buffer_USART2_len = ARRAY_LEN(rx_buffer_USART2);
 #endif
-#if defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+#if defined(CONTROL_SERIAL_USART2)
 static uint16_t timeoutCntSerial_USART2 = SERIAL_TIMEOUT;  // Timeout counter for USART2 Rx command
 static uint8_t  timeoutFlgSerial_USART2 = 0;               // Timeout Flag for USART2 Rx command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
 #endif
-#if defined(SIDEBOARD_SERIAL_USART2)
-SerialSideboard Sideboard_USART2;
-SerialSideboard Sideboard_USART2_raw;
-static uint32_t Sideboard_USART2_len = sizeof(Sideboard_USART2);
-#endif
 
-#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1)
 static uint8_t  rx_buffer_USART1[SERIAL_BUFFER_SIZE];      // USART1 Rx DMA circular buffer
 static uint32_t rx_buffer_USART1_len = ARRAY_LEN(rx_buffer_USART1);
 #endif
-#if defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(CONTROL_SERIAL_USART1)
 static uint16_t timeoutCntSerial_USART1 = SERIAL_TIMEOUT;  // Timeout counter for USART1 Rx command
 static uint8_t  timeoutFlgSerial_USART1 = 0;               // Timeout Flag for USART1 Rx command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
-#endif
-#if defined(SIDEBOARD_SERIAL_USART1)
-SerialSideboard Sideboard_USART1;
-SerialSideboard Sideboard_USART1_raw;
-static uint32_t Sideboard_USART1_len = sizeof(Sideboard_USART1);
 #endif
 
 #if defined(CONTROL_SERIAL_USART2)
@@ -367,17 +356,17 @@ void Input_Init(void) {
  #if defined(CONTROL_PWM_LEFT) || defined(CONTROL_PWM_RIGHT)
     PWM_Init();
   #endif
-  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1)
     UART1_Init();
   #endif
-  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2)
     UART2_Init();
   #endif
-  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1)
     HAL_UART_Receive_DMA(&huart1, (uint8_t *)rx_buffer_USART1, sizeof(rx_buffer_USART1));
     UART_DisableRxErrors(&huart1);
   #endif
-  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2)
     HAL_UART_Receive_DMA(&huart2, (uint8_t *)rx_buffer_USART2, sizeof(rx_buffer_USART2));
     UART_DisableRxErrors(&huart2);
   #endif
@@ -472,7 +461,7 @@ void Input_Init(void) {
 
     if(LCD_Init(&lcd)!=LCD_OK) {
         // error occured
-        //TODO while(1);
+        while (1) {}
     }
 
     LCD_ClearDisplay(&lcd);
@@ -504,8 +493,8 @@ void Input_Init(void) {
   * @param  huart: UART handle.
   * @retval None
   */
-#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || \
-    defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || \
+    defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1)
 void UART_DisableRxErrors(UART_HandleTypeDef *huart)
 {  
   CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE);    /* Disable PE (Parity Error) interrupts */  
@@ -1000,19 +989,6 @@ void readInputRaw(void) {
     }
     #endif
 
-    #if defined(SIDEBOARD_SERIAL_USART2)
-    if (inIdx == SIDEBOARD_SERIAL_USART2) {
-      input1[inIdx].raw = Sideboard_USART2.cmd1;
-      input2[inIdx].raw = Sideboard_USART2.cmd2;
-    }
-    #endif
-    #if defined(SIDEBOARD_SERIAL_USART1)
-    if (inIdx == SIDEBOARD_SERIAL_USART1) {
-      input1[inIdx].raw = Sideboard_USART1.cmd1;
-      input2[inIdx].raw = Sideboard_USART1.cmd2;
-    }
-    #endif
-
     #if defined(CONTROL_PPM_LEFT)
     if (inIdx == CONTROL_PPM_LEFT) {
       input1[inIdx].raw = (ppm_captured_value[0] - 500) * 2;
@@ -1081,54 +1057,38 @@ void handleTimeout(void) {
     }
     #endif
 
-    #if defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+    #if defined(CONTROL_SERIAL_USART2)
       if (timeoutCntSerial_USART2++ >= SERIAL_TIMEOUT) {     // Timeout qualification
         timeoutFlgSerial_USART2 = 1;                         // Timeout detected
         timeoutCntSerial_USART2 = SERIAL_TIMEOUT;            // Limit timout counter value
-        #if defined(DUAL_INPUTS) && ((defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 1) || (defined(SIDEBOARD_SERIAL_USART2) && SIDEBOARD_SERIAL_USART2 == 1))
+        #if defined(DUAL_INPUTS) && CONTROL_SERIAL_USART2 == 1
           inIdx = 0;                                    // Switch to Primary input in case of Timeout on Auxiliary input
         #endif
       } else {                                          // No Timeout
-        #if defined(DUAL_INPUTS) && defined(SIDEBOARD_SERIAL_USART2)
-          if (Sideboard_USART2.sensors & SWA_SET) {          // If SWA is set, switch to Sideboard control
-            inIdx = SIDEBOARD_SERIAL_USART2;
-          } else {
-            inIdx = !SIDEBOARD_SERIAL_USART2;
-          }
-        #elif defined(DUAL_INPUTS) && (defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 1)
+        #if defined(DUAL_INPUTS) && CONTROL_SERIAL_USART2 == 1
           inIdx = 1;                                    // Switch to Auxiliary input in case of NO Timeout on Auxiliary input
         #endif
       }
-      #if (defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 0) || (defined(SIDEBOARD_SERIAL_USART2) && SIDEBOARD_SERIAL_USART2 == 0 && !defined(VARIANT_HOVERBOARD))
+      #if defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 0
         timeoutFlgSerial = timeoutFlgSerial_USART2;          // Report Timeout only on the Primary Input
       #endif
     #endif
 
-    #if defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+    #if defined(CONTROL_SERIAL_USART1)
       if (timeoutCntSerial_USART1++ >= SERIAL_TIMEOUT) {     // Timeout qualification
         timeoutFlgSerial_USART1 = 1;                         // Timeout detected
         timeoutCntSerial_USART1 = SERIAL_TIMEOUT;            // Limit timout counter value
-        #if defined(DUAL_INPUTS) && ((defined(CONTROL_SERIAL_USART1) && CONTROL_SERIAL_USART1 == 1) || (defined(SIDEBOARD_SERIAL_USART1) && SIDEBOARD_SERIAL_USART1 == 1))
+        #if defined(DUAL_INPUTS) && CONTROL_SERIAL_USART1 == 1
           inIdx = 0;                                    // Switch to Primary input in case of Timeout on Auxiliary input
         #endif
       } else {                                          // No Timeout
-        #if defined(DUAL_INPUTS) && defined(SIDEBOARD_SERIAL_USART1)
-          if (Sideboard_USART1.sensors & SWA_SET) {          // If SWA is set, switch to Sideboard control
-            inIdx = SIDEBOARD_SERIAL_USART1;
-          } else {
-            inIdx = !SIDEBOARD_SERIAL_USART1;
-          }
-        #elif defined(DUAL_INPUTS) && (defined(CONTROL_SERIAL_USART1) && CONTROL_SERIAL_USART1 == 1)
+        #if defined(DUAL_INPUTS) && CONTROL_SERIAL_USART1 == 1
           inIdx = 1;                                    // Switch to Auxiliary input in case of NO Timeout on Auxiliary input
         #endif
       }
-      #if (defined(CONTROL_SERIAL_USART1) && CONTROL_SERIAL_USART1 == 0) || (defined(SIDEBOARD_SERIAL_USART1) && SIDEBOARD_SERIAL_USART1 == 0 && !defined(VARIANT_HOVERBOARD))
+      #if defined(CONTROL_SERIAL_USART1) && CONTROL_SERIAL_USART1 == 0
         timeoutFlgSerial = timeoutFlgSerial_USART1;          // Report Timeout only on the Primary Input
       #endif
-    #endif
-
-    #if defined(SIDEBOARD_SERIAL_USART2) && defined(SIDEBOARD_SERIAL_USART1)
-      timeoutFlgSerial = timeoutFlgSerial_USART2 || timeoutFlgSerial_USART1;
     #endif
 
     #if defined(CONTROL_NUNCHUK) || defined(SUPPORT_NUNCHUK) || defined(VARIANT_TRANSPOTTER) || \
@@ -1322,7 +1282,7 @@ static uint8_t usart2_rx_feed(uint8_t byte)
 
 void usart2_rx_check(void)
 {
-  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)  
+  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2)
   static uint32_t old_pos;
   uint32_t pos;
   pos = rx_buffer_USART2_len - __HAL_DMA_GET_COUNTER(huart2.hdmarx);         // Calculate current position in buffer
@@ -1362,25 +1322,7 @@ void usart2_rx_check(void)
   }
   #endif // CONTROL_SERIAL_USART2
 
-  #ifdef SIDEBOARD_SERIAL_USART2
-  uint8_t *ptr;	
-  if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&Sideboard_USART2_raw;                                  // Initialize the pointer with Sideboard_USART2_raw address
-    if (pos > old_pos && (pos - old_pos) == Sideboard_USART2_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_USART2[old_pos], Sideboard_USART2_len);              // Copy data. This is possible only if Sideboard_USART2_raw is contiguous! (meaning all the structure members have the same size)
-      usart2_process_sideboard(&Sideboard_USART2_raw, &Sideboard_USART2, 2);      // Process data
-    } else if ((rx_buffer_USART2_len - old_pos + pos) == Sideboard_USART2_len) {  // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_USART2[old_pos], rx_buffer_USART2_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_USART2_len - old_pos;                               // Move to correct position in Sideboard_USART2_raw
-        memcpy(ptr, &rx_buffer_USART2[0], pos);                              // Copy remaining data
-      }
-      usart2_process_sideboard(&Sideboard_USART2_raw, &Sideboard_USART2, 2);      // Process data
-    }
-  }
-  #endif // SIDEBOARD_SERIAL_USART2
-
-  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+  #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2)
   old_pos = pos;                                                        // Update old position
   if (old_pos == rx_buffer_USART2_len) {                                     // Check and manually update if we reached end of buffer
     old_pos = 0;
@@ -1395,7 +1337,7 @@ void usart2_rx_check(void)
  */
 void usart1_rx_check(void)
 {
-  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1)
   static uint32_t old_pos;
   uint32_t pos;  
   pos = rx_buffer_USART1_len - __HAL_DMA_GET_COUNTER(huart1.hdmarx);         // Calculate current position in buffer
@@ -1432,25 +1374,7 @@ void usart1_rx_check(void)
   }
   #endif // CONTROL_SERIAL_USART1
 
-  #ifdef SIDEBOARD_SERIAL_USART1
-  uint8_t *ptr;
-  if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&Sideboard_USART1_raw;                                  // Initialize the pointer with Sideboard_USART1_raw address
-    if (pos > old_pos && (pos - old_pos) == Sideboard_USART1_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_USART1[old_pos], Sideboard_USART1_len);              // Copy data. This is possible only if Sideboard_USART1_raw is contiguous! (meaning all the structure members have the same size)
-      usart1_process_sideboard(&Sideboard_USART1_raw, &Sideboard_USART1, 1);      // Process data
-    } else if ((rx_buffer_USART1_len - old_pos + pos) == Sideboard_USART1_len) {  // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_USART1[old_pos], rx_buffer_USART1_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_USART1_len - old_pos;                               // Move to correct position in Sideboard_USART1_raw
-        memcpy(ptr, &rx_buffer_USART1[0], pos);                              // Copy remaining data
-      }
-      usart1_process_sideboard(&Sideboard_USART1_raw, &Sideboard_USART1, 1);      // Process data
-    }
-  }
-  #endif // SIDEBOARD_SERIAL_USART1
-
-  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+  #if defined(DEBUG_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1)
   old_pos = pos;                                                        // Update old position
   if (old_pos == rx_buffer_USART1_len) {                                     // Check and manually update if we reached end of buffer
     old_pos = 0;
@@ -1487,12 +1411,12 @@ uint8_t usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out
       }
       if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
         *command_out = *command_in;
-        if (usart_idx == 2) {             // Sideboard USART2
+        if (usart_idx == 2) {             // USART2
           #ifdef CONTROL_SERIAL_USART2
           timeoutFlgSerial_USART2 = 0;         // Clear timeout flag
           timeoutCntSerial_USART2 = 0;         // Reset timeout counter
           #endif
-        } else if (usart_idx == 1) {      // Sideboard USART1
+        } else if (usart_idx == 1) {      // USART1
           #ifdef CONTROL_SERIAL_USART1
           timeoutFlgSerial_USART1 = 0;         // Clear timeout flag
           timeoutCntSerial_USART1 = 0;         // Reset timeout counter
@@ -1512,7 +1436,7 @@ uint8_t usart1_process_command(SerialUart1 *command_in, SerialUart1 *command_out
     
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
-      if (usart_idx == 1) {      // Sideboard USART1
+      if (usart_idx == 1) {      // USART1
         timeoutFlgSerial_USART1 = 0;         // Clear timeout flag
         timeoutCntSerial_USART1 = 0;         // Reset timeout counter
       }
@@ -1536,12 +1460,12 @@ uint8_t usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out
       }
       if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
         *command_out = *command_in;
-        if (usart_idx == 2) {             // Sideboard USART2
+        if (usart_idx == 2) {             // USART2
           #ifdef CONTROL_SERIAL_USART2
           timeoutFlgSerial_USART2 = 0;         // Clear timeout flag
           timeoutCntSerial_USART2 = 0;         // Reset timeout counter
           #endif
-        } else if (usart_idx == 1) {      // Sideboard USART1
+        } else if (usart_idx == 1) {      // USART1
           #ifdef CONTROL_SERIAL_USART1
           timeoutFlgSerial_USART1 = 0;         // Clear timeout flag
           timeoutCntSerial_USART1 = 0;         // Reset timeout counter
@@ -1570,7 +1494,7 @@ uint8_t usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out
                           
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
-      if (usart_idx == 2) {             // Sideboard USART2
+      if (usart_idx == 2) {             // USART2
         timeoutFlgSerial_USART2 = 0;         // Clear timeout flag
         timeoutCntSerial_USART2 = 0;         // Reset timeout counter
       }
@@ -1579,34 +1503,6 @@ uint8_t usart2_process_command(SerialUart2 *command_in, SerialUart2 *command_out
   }
   #endif
   return 0;
-}
-#endif
-
-/*
- * Process Sideboard Rx data
- * - if the Sideboard_in data is valid (correct START_FRAME and checksum) copy the Sideboard_in to Sideboard_out
- */
-#if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1)
-void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sideboard_out, uint8_t usart_idx)
-{
-  uint16_t checksum;
-  if (Sideboard_in->start == SERIAL_START_FRAME) {
-    checksum = (uint16_t)(Sideboard_in->start ^ Sideboard_in->pitch ^ Sideboard_in->dPitch ^ Sideboard_in->cmd1 ^ Sideboard_in->cmd2 ^ Sideboard_in->sensors);
-    if (Sideboard_in->checksum == checksum) {
-      *Sideboard_out = *Sideboard_in;
-      if (usart_idx == 2) {             // Sideboard USART2
-        #ifdef SIDEBOARD_SERIAL_USART2
-        timeoutCntSerial_USART2  = 0;        // Reset timeout counter
-        timeoutFlgSerial_USART2 = 0;         // Clear timeout flag
-        #endif
-      } else if (usart_idx == 1) {      // Sideboard USART1
-        #ifdef SIDEBOARD_SERIAL_USART1
-        timeoutCntSerial_USART1 = 0;         // Reset timeout counter
-        timeoutFlgSerial_USART1 = 0;         // Clear timeout flag
-        #endif
-      }
-    }
-  }
 }
 #endif
 
@@ -1707,7 +1603,7 @@ void usart2_tx_Send(void)
 
 /*
  * LEDs Handling
- * This function manages the leds behavior connected to the sideboard
+ * This function prepares the board status LEDs.
  */
 void Leds(uint16_t *leds) {
     
@@ -1963,108 +1859,6 @@ void HSVtoRGB(float hue, float saturation, float value, uint8_t* red, uint8_t* g
     *blue  = (uint8_t)((b + m) * 255);
 }
 #endif
-
-/*
- * Sideboard Sensor Handling
- * This function manages the sideboards photo sensors.
- * In non-hoverboard variants, the sensors are used as push buttons.
- */
-void sideboardSensors(uint8_t sensors) {
-  #if !defined(VARIANT_HOVERBOARD) && (defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART1))
-    static uint8_t sensor1_index;                                 // holds the press index number for sensor1, when used as a button
-    static uint8_t sensor1_prev,  sensor2_prev;
-    uint8_t sensor1_trig = 0, sensor2_trig = 0;
-    #if defined(SIDEBOARD_SERIAL_USART2)
-    uint8_t  sideboardIdx = SIDEBOARD_SERIAL_USART2;
-    uint16_t sideboardSns = Sideboard_USART2.sensors;
-    #else
-    uint8_t  sideboardIdx = SIDEBOARD_SERIAL_USART1;
-    uint16_t sideboardSns = Sideboard_USART1.sensors;
-    #endif
-
-    if (inIdx == sideboardIdx) {                                  // Use Sideboard data
-      sensor1_index = 2 + ((sideboardSns & SWB_SET) >> 9);        // SWB on RC transmitter is used to change Control Type
-      if (sensor1_index == 2) {                                   // FOC control Type
-        sensor1_index = (sideboardSns & SWC_SET) >> 11;           // SWC on RC transmitter is used to change Control Mode
-      }
-      sensor1_trig  = sensor1_index != sensor1_prev;              // rising or falling edge change detection
-      if (inIdx != inIdx_prev) {                                  // Force one update at Input idx change
-        sensor1_trig  = 1;
-      }
-      sensor1_prev  = sensor1_index;
-    } else {                                                      // Use Optical switches
-      sensor1_trig  = (sensors & SENSOR1_SET) && !sensor1_prev;   // rising edge detection
-      sensor1_prev  =  sensors & SENSOR1_SET;
-    }
-
-    // Control MODE and Control Type Handling
-    if (sensor1_trig) {
-      switch (sensor1_index) {
-        case 0:     // FOC VOLTAGE
-          rtP_Motor.z_ctrlTypSel = FOC_CTRL;
-          ctrlModReqRaw         = VLT_MODE;
-          break;
-        case 1:     // FOC SPEED
-          rtP_Motor.z_ctrlTypSel = FOC_CTRL;
-          ctrlModReqRaw         = SPD_MODE;
-          break;
-        case 2:     // FOC TORQUE
-          rtP_Motor.z_ctrlTypSel = FOC_CTRL;
-          ctrlModReqRaw         = TRQ_MODE;
-          break;
-        case 3:     // SINUSOIDAL
-          rtP_Motor.z_ctrlTypSel = SIN_CTRL;
-          break;
-        case 4:     // COMMUTATION
-          rtP_Motor.z_ctrlTypSel = COM_CTRL;
-          break;
-      }
-      if (inIdx == inIdx_prev) { beepShortMany(sensor1_index + 1, 1); }
-      if (++sensor1_index > 4) { sensor1_index = 0; }
-    }
-
-                                                             // Field Weakening Activation/Deactivation
-      static uint8_t  sensor2_index = 1;                          // holds the press index number for sensor2, when used as a button
-
-      // Override in case the Sideboard control is Active
-      if (inIdx == sideboardIdx) {                                // Use Sideboard data
-        sensor2_index = (sideboardSns & SWD_SET) >> 13;           // SWD on RC transmitter is used to Activate/Deactivate Field Weakening
-        sensor2_trig  = sensor2_index != sensor2_prev;            // rising or falling edge change detection
-        if (inIdx != inIdx_prev) {                                // Force one update at Input idx change
-          sensor2_trig  = 1;
-        }
-        sensor2_prev  = sensor2_index;
-      }else{
-        sensor2_trig  = (sensors & SENSOR2_SET) && !sensor2_prev;   // rising edge detection
-        sensor2_prev  =  sensors & SENSOR2_SET;
-      }
-
-      #ifdef CRUISE_CONTROL_SUPPORT                                 // Cruise Control Activation/Deactivation
-        if (sensor2_trig) {
-          cruiseControl(sensor2_trig);
-        }
-      #else
-        if (sensor2_trig) {
-          switch (sensor2_index) {
-            case 0:     // FW Disabled
-              rtP_Motor.b_fieldWeakEna  = 0; 
-              rtP_Motor.b_fieldWeakEna = 0;
-              Input_Lim_Init();
-              break;
-            case 1:     // FW Enabled
-              rtP_Motor.b_fieldWeakEna  = 1; 
-              rtP_Motor.b_fieldWeakEna = 1;
-              Input_Lim_Init();
-              break; 
-          }
-          if (inIdx == inIdx_prev) { beepShortMany(sensor2_index + 1, 1); }
-          if (++sensor2_index > 1) { sensor2_index = 0; }
-        }
-      #endif  // CRUISE_CONTROL_SUPPORT
-  #endif
-}
-
-
 
 /* =========================== Poweroff Functions =========================== */
 

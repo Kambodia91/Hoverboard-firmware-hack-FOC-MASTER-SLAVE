@@ -86,8 +86,8 @@
 // ############################### BOARD VARIANT ###############################
 /* Board Variant */
  
-// #define BOARD_MASTER                      // board master
-#define BOARD_SLAVE                       // board slave
+#define BOARD_MASTER                      // board master
+// #define BOARD_SLAVE                       // board slave
 
 #ifdef BOARD_MASTER
 #define LEFT_SIDE // prawa strona stojac za kosiarka, patrzac w kierunku jazdy
@@ -346,7 +346,6 @@
   
   #ifdef DUAL_INPUTS
     #define FLASH_WRITE_KEY     0x1101    // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
-    // #define SIDEBOARD_SERIAL_USART1 1
     #define CONTROL_SERIAL_USART1 1       // right sensor board cable. Number indicates priority for dual-input. Disable if I2C (nunchuk or lcd) is used! For Arduino control check the hoverSerial.ino
     #define FEEDBACK_SERIAL_USART1        // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
     #define AUX_INPUT1          3, -1000, 0, 1000, 0  // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
@@ -417,7 +416,6 @@
   #define PRI_INPUT2              2, -1024, 0, 1024, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #ifdef DUAL_INPUTS
     #define FLASH_WRITE_KEY       0x1103  // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
-    // #define SIDEBOARD_SERIAL_USART2 1
     #define AUX_INPUT1            3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
     #define AUX_INPUT2            3, -1000, 0, 1000, 0     // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #else
@@ -577,24 +575,19 @@
   #undef  CTRL_MOD_REQ
   #define CTRL_MOD_REQ            VLT_MODE  // HOVERCAR works best in TORQUE Mode. VOLTAGE mode is preffered when freewheeling is not desired when throttle is released.
   #define CONTROL_ADC             0         // use ADC as input. Number indicates priority for dual-input. Disable CONTROL_SERIAL_USART2, FEEDBACK_SERIAL_USART2, DEBUG_SERIAL_USART2!
-  #define SIDEBOARD_SERIAL_USART1 1         // Rx from right sensor board: to use photosensors as buttons. Number indicates priority for dual-input. Comment-out if sideboard is not used!
-  #define FEEDBACK_SERIAL_USART1            // Tx to   right sensor board: for LED battery indication. Comment-out if sideboard is not used!
-
-  #define DUAL_INPUTS                       // ADC*(Primary) + Sideboard_USART1(Auxiliary). Uncomment this to use Dual-inputs
+  #define FEEDBACK_SERIAL_USART1            // Tx feedback output
   #define PRI_INPUT1              1,  1000, 0, 2500, 0  // Pedal Brake        TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #define PRI_INPUT2              1,   500, 0, 2200, 0  // Pedal Accel        TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
-  #define AUX_INPUT1              2, -1000, 0, 1000, 0  // Sideboard Steer    TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
-  #define AUX_INPUT2              2, -1000, 0, 1000, 0  // Sideboard Speed    TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
 
   #define SPEED_COEFFICIENT       16384     // 1.0f
-  #define STEER_COEFFICIENT       8192      // 0.5f Only active in Sideboard input
+  #define STEER_COEFFICIENT       8192      // 0.5f
   // #define ADC_ALTERNATE_CONNECT             // use to swap ADC inputs
   // #define INVERT_R_DIRECTION                // Invert rotation of right motor
   // #define INVERT_L_DIRECTION                // Invert rotation of left motor
   // #define DEBUG_SERIAL_USART1               // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
 
   // Extra functionality
-  // #define CRUISE_CONTROL_SUPPORT            // [-] Flag to enable Cruise Control support. Activation/Deactivation is done by sideboard button or Brake pedal press.
+  // #define CRUISE_CONTROL_SUPPORT            // [-] Flag to enable Cruise Control support. Activation/Deactivation is done by button or Brake pedal press.
   // #define STANDSTILL_HOLD_ENABLE            // [-] Flag to hold the position when standtill is reached. Only available and makes sense for VOLTAGE or TORQUE mode.
   // #define ELECTRIC_BRAKE_ENABLE             // [-] Flag to enable electric brake and replace the motor "freewheel" with a constant braking when the input torque request is 0. Only available and makes sense for TORQUE mode.
   // #define ELECTRIC_BRAKE_MAX    100         // (0, 500) Maximum electric brake to be applied when input torque request is 0 (pedal fully released).
@@ -637,17 +630,13 @@
 // Balancing controller:  [TODO]
 #ifdef VARIANT_HOVERBOARD
   #define FLASH_WRITE_KEY     0x1008          // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
-  #define SIDEBOARD_SERIAL_USART2 1           // left sensor board cable. Number indicates priority for dual-input. Disable if ADC or PPM is used! 
-  #define FEEDBACK_SERIAL_USART2
-  #define SIDEBOARD_SERIAL_USART1 0           // right sensor board cable. Number indicates priority for dual-input. Disable if I2C (nunchuk or lcd) is used!
-  #define FEEDBACK_SERIAL_USART1
+  #define CONTROL_SERIAL_USART2 0             // board-to-board communication
 
-  // If an iBUS RC receiver is connected to either Left Sideboard (AUX_INPUT) or Right Sideboard (PRI_INPUT)
-  // PRIMARY INPUT:          TYPE, MIN, MID, MAX, DEADBAND /* TYPE: 0:Disabled, 1:Normal Pot, 2:Middle Resting Pot, 3:Auto-detect */
-  #define PRI_INPUT1          3, -1000, 0, 1000, 0  // Priority Sideboard can be used to send commands via an iBUS Receiver connected to the sideboard
-  #define PRI_INPUT2          3, -1000, 0, 1000, 0  // Priority Sideboard can be used to send commands via an iBUS Receiver connected to the sideboard
-  #define AUX_INPUT1          3, -1000, 0, 1000, 0  // not used
-  #define AUX_INPUT2          3, -1000, 0, 1000, 0  // not used
+  // PRIMARY INPUT: TYPE, MIN, MID, MAX, DEADBAND
+  #define PRI_INPUT1          3, -1000, 0, 1000, 0
+  #define PRI_INPUT2          3, -1000, 0, 1000, 0
+  #define AUX_INPUT1          3, -1000, 0, 1000, 0
+  #define AUX_INPUT2          3, -1000, 0, 1000, 0
 #endif
 // ######################## END OF VARIANT_HOVERBOARD SETTINGS #########################
 
@@ -710,19 +699,19 @@
 
 
 // ########################### UART SETIINGS ############################
-#if defined(FEEDBACK_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || \
-    defined(FEEDBACK_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(FEEDBACK_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2) || \
+    defined(FEEDBACK_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1)
   #define SERIAL_START_FRAME      0xABCD                  // [-] Start frame definition for serial commands
   #define SERIAL_BUFFER_SIZE      1024                    // [bytes] Size of Serial Rx buffer. Make sure it is always larger than the structure size
   #define SERIAL_TIMEOUT          100                     // [-] Serial timeout duration for the received data. 160 ~= 0.8 sec. Calculation: 0.8 sec / 0.005 sec
 #endif
-#if defined(FEEDBACK_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
+#if defined(FEEDBACK_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2)
   #ifndef USART2_BAUD
     #define USART2_BAUD           115200                  // UART2 baud rate (long wired cable)
   #endif
   #define USART2_WORDLENGTH       UART_WORDLENGTH_8B      // UART_WORDLENGTH_8B or UART_WORDLENGTH_9B
 #endif
-#if defined(FEEDBACK_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1)
+#if defined(FEEDBACK_SERIAL_USART1) || defined(CONTROL_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1)
   #ifndef USART1_BAUD
     #define USART1_BAUD           115200                  // UART1 baud rate (short wired cable)
   #endif
@@ -774,14 +763,6 @@
   #error WS2812B_ENA and FEEDBACK_SERIAL_USART1 not allowed, choose one.
 #endif
 
-#if defined(CONTROL_SERIAL_USART2) && defined(SIDEBOARD_SERIAL_USART2)
-  #error CONTROL_SERIAL_USART2 and SIDEBOARD_SERIAL_USART2 not allowed, choose one.
-#endif
-
-#if defined(CONTROL_SERIAL_USART1) && defined(SIDEBOARD_SERIAL_USART1)
-  #error CONTROL_SERIAL_USART1 and SIDEBOARD_SERIAL_USART1 not allowed, choose one.
-#endif
-
 #if defined(DEBUG_SERIAL_USART2) && defined(FEEDBACK_SERIAL_USART2)
   #error DEBUG_SERIAL_USART2 and FEEDBACK_SERIAL_USART2 not allowed, choose one.
 #endif
@@ -808,19 +789,19 @@
 
 
 // LEFT cable checks
-#if defined(CONTROL_ADC) && (defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
+#if defined(CONTROL_ADC) && (defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
   //#error CONTROL_ADC and SERIAL_USART2 not allowed. It is on the same cable.
 #endif
 
-#if defined(CONTROL_PPM_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
+#if defined(CONTROL_PPM_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
   #error CONTROL_PPM_LEFT and SERIAL_USART2 not allowed. It is on the same cable.
 #endif
 
-#if defined(CONTROL_PWM_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
+#if defined(CONTROL_PWM_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
   #error CONTROL_PWM_LEFT and SERIAL_USART2 not allowed. It is on the same cable.
 #endif
 
-#if defined(SUPPORT_BUTTONS_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
+#if defined(SUPPORT_BUTTONS_LEFT) && (defined(CONTROL_SERIAL_USART2) || defined(FEEDBACK_SERIAL_USART2) || defined(DEBUG_SERIAL_USART2))
   #error SUPPORT_BUTTONS_LEFT and SERIAL_USART2 not allowed. It is on the same cable.
 #endif
 
@@ -838,27 +819,27 @@
 
 
 // RIGHT cable checks
-#if defined(CONTROL_NUNCHUK) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+#if defined(CONTROL_NUNCHUK) && (defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error CONTROL_NUNCHUK and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
-#if defined(CONTROL_PPM_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+#if defined(CONTROL_PPM_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error CONTROL_PPM_RIGHT and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
-#if defined(CONTROL_PWM_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+#if defined(CONTROL_PWM_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error CONTROL_PWM_RIGHT and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
-#if defined(DEBUG_I2C_LCD) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+#if defined(DEBUG_I2C_LCD) && (defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error DEBUG_I2C_LCD and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
-#if defined(WS2812B_ENA) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+#if defined(WS2812B_ENA) && (defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error WS2812B_ENA and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
-#if defined(SUPPORT_BUTTONS_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(SIDEBOARD_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
+#if defined(SUPPORT_BUTTONS_RIGHT) && (defined(CONTROL_SERIAL_USART1) || defined(FEEDBACK_SERIAL_USART1) || defined(DEBUG_SERIAL_USART1))
   #error SUPPORT_BUTTONS_RIGHT and SERIAL_USART1 not allowed. It is on the same cable.
 #endif
 
