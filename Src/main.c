@@ -502,8 +502,8 @@ int main(void) {
         measured_dc_curr_index = 0;
       }
     }
-    measured_dc_curr  = -((measured_dc_curr_sum / 50) * 100) / 4;  // Current in 0.01 A for UART telemetry
-    motor_dc_curr = -(rtU_Motor.i_DCLink * 100) / A2BIT_CONV;  // Right DC Link Current * 100
+    measured_dc_curr  = -((measured_dc_curr_sum / 50) * 100) / A2BIT_CONV_DC;  // Current in 0.01 A for UART telemetry
+    motor_dc_curr = -(rtU_Motor.i_DCLink * 100) / A2BIT_CONV_DC;  // Right DC Link Current * 100
     dc_curr       = motor_dc_curr;            // Total DC Link Current * 100
 
     // ####### DEBUG SERIAL OUT #######

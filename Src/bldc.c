@@ -45,7 +45,7 @@ extern P              rtP_Motor;                  /* Block parameters (auto stor
 static int16_t        pwm_margin;                 /* This margin allows to have a window in the PWM signal for proper FOC Phase currents measurement */
 
 extern uint8_t        ctrlModReq;
-static int16_t        curDC_max       = (I_DC_MAX * A2BIT_CONV);
+static int16_t        curDC_max       = (I_DC_MAX * A2BIT_CONV_DC);
 int16_t               cur_phaB        = 0; 
 int16_t               cur_phaC        = 0;
 int16_t               cur_DC          = 0;
